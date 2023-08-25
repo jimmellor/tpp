@@ -289,7 +289,7 @@ surf_main = pg.display.set_mode([400,1280], SCREEN_MODE)
 w_main = 1280
 
 # derived parameters
-w_spectra = w_main-10           # Allow a small margin, left and right
+w_spectra = w_main # -10  don't need         # Allow a small margin, left and right
 w_middle = w_spectra/2          # mid point of spectrum
 x_spectra = (w_main-w_spectra) / 2.0    # x coord. of spectrum on screen
 
