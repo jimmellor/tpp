@@ -753,7 +753,7 @@ while True:
                     info_counter = 0
 
     # rotate the screen and blit it to the main surface
-    surf_main.blit(pg.transform.rotate(surf_main, 90), (400,0))
+    surf_main.blit(pg.transform.rotate(surf_main, 90), (0,0))
 
     # Finally, update display for user
     pg.display.update()
