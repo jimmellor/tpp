@@ -128,9 +128,9 @@ op.set_defaults(
     sp_max                  =-20,       # dB relative to clipping, at top of grid
     v_min                   =-120,      # palette starts at this level
     v_max                   =-20,       # palette ends at this level
-    waterfall               = False,    # Using waterfall? T/F
-    waterfall_accumulation  = 100,        # No. of spectra per waterfall line
-    waterfall_palette       = 1         # choose a waterfall color scheme
+    waterfall               = True,    # Using waterfall? T/F
+    waterfall_accumulation  = 4,        # No. of spectra per waterfall line
+    waterfall_palette       = 2         # choose a waterfall color scheme
     )
 
 opt, args = op.parse_args()
