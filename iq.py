@@ -264,7 +264,7 @@ def cpu_load(interval):
 # Screen setup parameters
 
 if opt.lcd4:                        # setup for directfb (non-X) graphics
-    SCREEN_SIZE = (1280,400)         # default size for the 4" LCD (480x272)
+    SCREEN_SIZE = (400,1280)         # default size for the 4" LCD (480x272)
     SCREEN_MODE = pg.FULLSCREEN
     # If we are root, we can set up LCD4 brightness.
     brightness = str(min(100, max(0, opt.lcd4_brightness)))  # validated string
@@ -286,7 +286,7 @@ pg.font.init()
 
 # Define the main window surface
 surf_main = pg.display.set_mode(SCREEN_SIZE, SCREEN_MODE)
-w_main = surf_main.get_height()
+w_main = surf_main.get_width()
 
 # derived parameters
 w_spectra = w_main-10           # Allow a small margin, left and right
@@ -754,7 +754,7 @@ while True:
 
     # rotate the screen and blit it to the main surface
     surf_main.blit(pg.transform.rotate(surf_main, 90), (0,0))
-    
+
     # Finally, update display for user
     pg.display.update()
 
