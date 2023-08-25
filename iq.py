@@ -275,8 +275,8 @@ if opt.lcd4:                        # setup for directfb (non-X) graphics
     subprocess.call(cmd, shell=True)    # invoke shell script
 else:
     SCREEN_MODE = pg.FULLSCREEN if opt.fullscreen else 0
-    SCREEN_SIZE = (400,1280) if opt.waterfall \
-                     else (400,1280) # NB: graphics may not scale well
+    SCREEN_SIZE = (1280,400) if opt.waterfall \
+                     else (1280,400) # NB: graphics may not scale well
 WF_LINES = 50                      # How many lines to use in the waterfall
 
 # Initialize pygame (pg)
@@ -286,7 +286,7 @@ pg.font.init()
 
 # Define the main window surface
 surf_main = pg.display.set_mode([0,0], SCREEN_MODE)
-w_main = surf_main.get_width()
+w_main = surf_main.get_height()
 
 # derived parameters
 w_spectra = w_main-10           # Allow a small margin, left and right
