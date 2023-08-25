@@ -286,14 +286,14 @@ pg.font.init()
 
 # Define the main window surface
 surf_main = pg.display.set_mode([0,0], SCREEN_MODE)
-w_main = surf_main.get_height()
+w_main = surf_main.get_width()
 
 # derived parameters
 w_spectra = w_main-10           # Allow a small margin, left and right
 w_middle = w_spectra/2          # mid point of spectrum
 x_spectra = (w_main-w_spectra) / 2.0    # x coord. of spectrum on screen
 
-h_2d = 2*SCREEN_SIZE[2]/3 if opt.waterfall \
+h_2d = 2*SCREEN_SIZE[1]/3 if opt.waterfall \
             else SCREEN_SIZE[1]         # height of 2d spectrum display
 h_2d -= 25 # compensate for LCD4 overscan?
 y_2d = 20. # y position of 2d disp. (screen top = 0)
@@ -415,7 +415,7 @@ if opt.control=="si570":
 # ** MAIN PROGRAM LOOP **
 
 run_flag = True                 # set false to suspend for help screen etc.
-info_phase = 0                  # > 0 --> show info overlays
+info_phase = 0                  # > 0 --> show info overlay
 info_counter = 0
 tloop = 0.
 t_last_data = 0.
