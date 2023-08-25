@@ -605,7 +605,6 @@ while True:
                 surf_main.blit(bb, (449, button_vloc[ix]))
         surf_main.blit(help_matter, (20,20))
         surf_main.blit(live_surface,(20,SCREEN_SIZE[1]-60))
-        surf_main = pg.transform.rotate(surf_main, 90)
 
     # Check for pygame events - keyboard, etc.
     # Note: A key press is not recorded as a PyGame event if you are 
@@ -753,7 +752,7 @@ while True:
                     info_phase = 0                  # Turn OFF overlay
                     info_counter = 0
     # Finally, update display for user
-    pg.display.update()
+    #pg.display.update()
 
     # End of main loop
 
