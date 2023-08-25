@@ -338,7 +338,7 @@ smfont = pg.font.SysFont('mono', 9)
 smfont_ht = smfont.get_linesize()
 
 # Define the size of a unit pixel in the waterfall
-wf_pixel_size = (w_spectra/opt.size, h_wf/WF_LINES)
+wf_pixel_size = (w_spectra/opt.size+1, h_wf/WF_LINES)
 
 # min, max dB for wf palette
 v_min, v_max = opt.v_min, opt.v_max     # lower/higher end (dB)
