@@ -397,10 +397,10 @@ print("Update interval = %.2f ms" % float(1000*chunk_time))
 if opt.source=="rtl":             # input from RTL dongle (and freq control)
     import iq_rtl as rtl
     dataIn = rtl.RTL_In(opt)
-elif opt.source=='audio':         # input from audio card
-    import iq_af as af
-    mainqueueLock = af.queueLock    # queue and lock only for soundcard
-    dataIn = af.DataInput(opt)
+# elif opt.source=='audio':         # input from audio card
+#     import iq_af as af
+#     mainqueueLock = af.queueLock    # queue and lock only for soundcard
+#     dataIn = af.DataInput(opt)
 else:
     print("unrecognized mode")
     quit_all()
@@ -753,7 +753,7 @@ while True:
                     info_counter = 0
 
     # rotate the screen and blit it to the main surface
-    surf_main.blit(pg.transform.rotate(surf_main, -90), (0,0))
+    surf_main.blit(pg.transform.rotate(surf_main, 90), (-400,0))
 
     # Finally, update display for user
     pg.display.update()
@@ -761,3 +761,8 @@ while True:
     # End of main loop
 
 # END OF IQ.PY
+
+# if this is the main program (not imported), run the main loop
+if __name__ == '__main__':
+    main()
+
