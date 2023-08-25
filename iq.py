@@ -63,7 +63,7 @@ GRAY =     (192, 192, 192)
 TRANS_YELLOW = (255,255,0,150)
 
 # Adjust for best graticule color depending on display gamma, resolution, etc.
-GRAT_COLOR = DARK_RED       # Color of graticule (grid)
+GRAT_COLOR = GREEN       # Color of graticule (grid)
 GRAT_COLOR_2 = WHITE        # Color of graticule text
 TRANS_OVERLAY = TRANS_YELLOW    # for info overlay
 TCOLOR2 = ORANGE              # text color on info screen
