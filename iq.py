@@ -375,7 +375,7 @@ lm_thread.start()
 print("CPU monitor thread started.")
 
 # Create graticule providing 2d graph calibration.
-mygraticule = Graticule(opt, smfont, h_2d, w_spectra, GRAT_COLOR, GRAT_COLOR_2)
+mygraticule = Graticule(opt, medfont, h_2d, w_spectra, GRAT_COLOR, GRAT_COLOR_2)
 sp_min, sp_max  =  sp_min_def, sp_max_def  =  opt.sp_min, opt.sp_max
 mygraticule.set_range(sp_min, sp_max)
 surf_2d_graticule = mygraticule.make()
