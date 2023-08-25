@@ -285,7 +285,7 @@ pg.display.init()
 pg.font.init()
 
 # Define the main window surface
-surf_main = pg.display.set_mode(SCREEN_SIZE, SCREEN_MODE)
+surf_main = pg.display.set_mode([0,0], SCREEN_MODE)
 w_main = surf_main.get_width()
 
 # derived parameters
