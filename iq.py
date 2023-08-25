@@ -295,7 +295,7 @@ x_spectra = (w_main-w_spectra) / 2.0    # x coord. of spectrum on screen
 
 h_2d = 266 if opt.waterfall \
             else SCREEN_SIZE[1]         # height of 2d spectrum display
-h_2d -= 25 # compensate for LCD4 overscan?
+#h_2d -= 25 # compensate for LCD4 overscan?
 y_2d = 20. # y position of 2d disp. (screen top = 0)
 
 # NB: transform size must be <= w_spectra.  I.e., need at least one
