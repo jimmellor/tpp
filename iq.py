@@ -322,8 +322,8 @@ led_urun = LED(10)
 led_clip = LED(10)
 
 # Waterfall geometry
-h_wf = 150         # Height of waterfall (3d spectrum)
-y_wf = 250              # Position just below 2d surface
+h_wf = 180         # Height of waterfall (3d spectrum)
+y_wf = 220              # Position just below 2d surface
 
 # Surface for waterfall (3d) spectrum
 surf_wf = pg.Surface((w_spectra, h_wf))
