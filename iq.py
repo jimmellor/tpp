@@ -751,8 +751,12 @@ while True:
                 elif event.key == pg.K_RETURN:
                     info_phase = 0                  # Turn OFF overlay
                     info_counter = 0
+
+    # rotate the screen and blit it to the main surface
+    surf_main.blit(pg.transform.rotate(surf_main, 90), (0,0))
+    
     # Finally, update display for user
-    #pg.display.update()
+    pg.display.update()
 
     # End of main loop
 
