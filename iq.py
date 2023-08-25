@@ -520,7 +520,7 @@ while True:
     pg.draw.lines(surf_2d, WHITE, False, list(zip(xlist,ylist)), 1)
 
     # Place 2d spectrum on main surface
-    surf_main.blit(pg.transform.rotate(surf_2d,-90), (0, y_2d))
+    surf_main.blit(pg.transform.rotate(surf_2d,-90), (0, 0))
 
     if opt.waterfall:
         # Calculate the new Waterfall line and blit it to main surface
