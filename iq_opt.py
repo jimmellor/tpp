@@ -123,7 +123,7 @@ op.set_defaults(
     si570_frequency         = 7050.0,   # initial freq. for Si570 LO.
     size                    = 384,      # size of FFT --> freq. resolution
     skip                    = 0,        # if not =0, skip some input data
-    source_rtl              = False,    # Use sound card, not RTL-SDR input
+    source_rtl              = True,    # Use sound card, not RTL-SDR input
     sp_min                  =-120,      # dB relative to clipping, at bottom of grid
     sp_max                  =-20,       # dB relative to clipping, at top of grid
     v_min                   =-120,      # palette starts at this level
