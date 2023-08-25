@@ -240,26 +240,26 @@ if opt.hamlib:
             time.sleep(interval)
 
 # THREAD: CPU load checking, monitoring cpu stats.
-cpu_usage = [0., 0., 0.]
-def cpu_load(interval):
-    """ Check CPU user and system time usage, along with load average.
-        User & system reported as fraction of wall clock time in
-        global variable cpu_usage.
-        Interval defines sleep time between checks (float secs).
-        To be run as thread.
-    """
-    global cpu_usage
-    times_store = np.array(os.times())
-    # Will return: fraction usr time, sys time, and 1-minute load average
-    cpu_usage = [0., 0., os.getloadavg()[0]]
-    while True:
-        time.sleep(interval)
-        times = np.array(os.times())
-        dtimes = times - times_store    # difference since last loop
-        usr = dtimes[0]/dtimes[4]       # fraction, 0 - 1
-        sys = dtimes[1]/dtimes[4]
-        times_store = times
-        cpu_usage = [usr, sys, os.getloadavg()[0]]
+# cpu_usage = [0., 0., 0.]
+# def cpu_load(interval):
+#     """ Check CPU user and system time usage, along with load average.
+#         User & system reported as fraction of wall clock time in
+#         global variable cpu_usage.
+#         Interval defines sleep time between checks (float secs).
+#         To be run as thread.
+#     """
+#     global cpu_usage
+#     times_store = np.array(os.times())
+#     # Will return: fraction usr time, sys time, and 1-minute load average
+#     cpu_usage = [0., 0., os.getloadavg()[0]]
+#     while True:
+#         time.sleep(interval)
+#         times = np.array(os.times())
+#         dtimes = times - times_store    # difference since last loop
+#         usr = dtimes[0]/dtimes[4]       # fraction, 0 - 1
+#         sys = dtimes[1]/dtimes[4]
+#         times_store = times
+#         cpu_usage = [usr, sys, os.getloadavg()[0]]
 
 # Screen setup parameters
 
@@ -277,7 +277,7 @@ else:
     SCREEN_MODE = pg.FULLSCREEN if opt.fullscreen else 0
     SCREEN_SIZE = (400,1280) if opt.waterfall \
                      else (400,1280) # NB: graphics may not scale well
-WF_LINES = 50                      # How many lines to use in the waterfall
+WF_LINES = 100                      # How many lines to use in the waterfall
 
 # Initialize pygame (pg)
 # We should not use pg.init(), because we don't want pg audio functions.
