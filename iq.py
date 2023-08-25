@@ -286,7 +286,7 @@ pg.font.init()
 
 # Define the main window surface
 surf_main = pg.display.set_mode([0,0], SCREEN_MODE)
-w_main = surf_main.get_height()
+w_main = surf_main.get_width()
 
 # derived parameters
 w_spectra = w_main-10           # Allow a small margin, left and right
