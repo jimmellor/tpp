@@ -293,7 +293,7 @@ w_spectra = w_main-10           # Allow a small margin, left and right
 w_middle = w_spectra/2          # mid point of spectrum
 x_spectra = (w_main-w_spectra) / 2.0    # x coord. of spectrum on screen
 
-h_2d = 266 if opt.waterfall \
+h_2d = 100 if opt.waterfall \
             else SCREEN_SIZE[1]         # height of 2d spectrum display
 h_2d -= 25 # compensate for LCD4 overscan?
 y_2d = 20. # y position of 2d disp. (screen top = 0)
