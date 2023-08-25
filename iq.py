@@ -420,7 +420,7 @@ run_flag = True                 # set false to suspend for help screen etc.
 info_phase = 1                  # > 0 --> show info overlays
 info_counter = 0
 tloop = 0.
-t_last_data = 1=0.
+t_last_data = 0
 nframe = 0
 t_frame0 = time.time()
 led_overflow_ct = 1
