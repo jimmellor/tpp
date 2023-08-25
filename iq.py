@@ -417,7 +417,7 @@ if opt.control=="si570":
 # ** MAIN PROGRAM LOOP **
 
 run_flag = True                 # set false to suspend for help screen etc.
-info_phase = 0                  # > 0 --> show info overlays
+info_phase = 1                  # > 0 --> show info overlays
 info_counter = 0
 tloop = 0.
 t_last_data = 0.
