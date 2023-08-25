@@ -275,8 +275,8 @@ if opt.lcd4:                        # setup for directfb (non-X) graphics
     subprocess.call(cmd, shell=True)    # invoke shell script
 else:
     SCREEN_MODE = pg.FULLSCREEN if opt.fullscreen else 0
-    SCREEN_SIZE = (1280,400) if opt.waterfall \
-                     else (1280,400) # NB: graphics may not scale well
+    SCREEN_SIZE = (400,1280) if opt.waterfall \
+                     else (400,1280) # NB: graphics may not scale well
 WF_LINES = 50                      # How many lines to use in the waterfall
 
 # Initialize pygame (pg)
@@ -751,9 +751,6 @@ while True:
                 elif event.key == pg.K_RETURN:
                     info_phase = 0                  # Turn OFF overlay
                     info_counter = 0
-
-    # rotate the screen and blit it to the main surface
-    surf_main.blit(pg.transform.rotate(surf_main, 90), (0,0))
 
     # Finally, update display for user
     pg.display.update()
