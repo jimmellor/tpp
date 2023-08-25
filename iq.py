@@ -296,7 +296,7 @@ x_spectra = (w_main-w_spectra) / 2.0    # x coord. of spectrum on screen
 h_2d = 266 if opt.waterfall \
             else SCREEN_SIZE[1]         # height of 2d spectrum display
 #h_2d -= 25 # compensate for LCD4 overscan?
-y_2d = 20. # y position of 2d disp. (screen top = 0)
+y_2d = 0 # y position of 2d disp. (screen top = 0)
 
 # NB: transform size must be <= w_spectra.  I.e., need at least one
 # pixel of width per data point.  Otherwise, waterfall won't work, etc.
@@ -320,7 +320,7 @@ led_urun = LED(10)
 led_clip = LED(10)
 
 # Waterfall geometry
-h_wf = SCREEN_SIZE[1]/3         # Height of waterfall (3d spectrum)
+h_wf = 134         # Height of waterfall (3d spectrum)
 y_wf = y_2d + h_2d              # Position just below 2d surface
 
 # Surface for waterfall (3d) spectrum
@@ -526,7 +526,8 @@ while True:
         # Calculate the new Waterfall line and blit it to main surface
         nsum = opt.waterfall_accumulation    # 2d spectra per wf line
         mywf.calculate(sp_log, nsum, surf_wf)
-        surf_main.blit(surf_wf, (x_spectra, y_wf+1))
+        #surf_main.blit(surf_wf, (x_spectra, y_wf+1))
+        surf_main.blit(pg.transform.rotate(surf_wf,-90), (0, 0))
 
     if info_phase > 0:
         # Assemble and show semi-transparent overlay info screen
