@@ -282,6 +282,7 @@ WF_LINES = 100                      # How many lines to use in the waterfall
 # Initialize pygame (pg)
 # We should not use pg.init(), because we don't want pg audio functions.
 pg.display.init()
+pg.mouse.set_visible(False)
 pg.font.init()
 
 # Define the main window surface
