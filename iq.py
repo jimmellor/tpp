@@ -751,10 +751,9 @@ while True:
                 elif event.key == pg.K_RETURN:
                     info_phase = 0                  # Turn OFF overlay
                     info_counter = 0
-
-    # rotate the surface 90 degrees
-    surf_main = pg.transform.rotate(surf_main, 90)
+        surf_main = pg.transform.rotate(surf_main, 90)
     
+
     # Finally, update display for user
     pg.display.update()
 
