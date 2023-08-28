@@ -110,7 +110,7 @@ op.set_defaults(
     hamlib                  = True,     # Using Hamlib? T/F (RPi-False)
     hamlib_device           = "/dev/ttyUSB0",   # Device address for Hamlib I/O
     hamlib_interval         = 1.0,      # Wait between hamlib freq. checks (secs)    
-    hamlib_rigtype          = 2031,     # Kenwood ts-590s
+    hamlib_rigtype          = RIG_MODEL_TS590S #2031,     # Kenwood ts-590s
     index                   = -1,       # index of audio device (-1 use default)
     lagfix                  = False,    # Fix up PCM 290x bug
     lcd4                    = False,    # default large screen
