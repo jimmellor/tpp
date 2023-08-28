@@ -107,10 +107,10 @@ op.set_defaults(
     control_si570           = False,    # normally, talk to RTL or Hamlib for freq info
     cpu_load_interval       = 3.0,      # cycle time for CPU monitor thread
     fullscreen              = False,    # Use full screen mode? (if not LCD4)
-    hamlib                  = False,    # Using Hamlib? T/F (RPi-False)
-    hamlib_device           = "/dev/ttyUSB0",   # Device address for Hamlib I/O
+    hamlib                  = True,     # Using Hamlib? T/F (RPi-False)
+    hamlib_device           = "/dev/tty.SLAB_USBtoUART",   # Device address for Hamlib I/O
     hamlib_interval         = 1.0,      # Wait between hamlib freq. checks (secs)    
-    hamlib_rigtype          = 229,      # Elecraft K3/KX3.
+    hamlib_rigtype          = 2031,     # Kenwood ts-590s
     index                   = -1,       # index of audio device (-1 use default)
     lagfix                  = False,    # Fix up PCM 290x bug
     lcd4                    = False,    # default large screen
@@ -123,7 +123,7 @@ op.set_defaults(
     si570_frequency         = 7050.0,   # initial freq. for Si570 LO.
     size                    = 384,      # size of FFT --> freq. resolution
     skip                    = 0,        # if not =0, skip some input data
-    source_rtl              = True,    # Use sound card, not RTL-SDR input
+    source_rtl              = False,    # Use sound card, not RTL-SDR input
     sp_min                  =-120,      # dB relative to clipping, at bottom of grid
     sp_max                  =-20,       # dB relative to clipping, at top of grid
     v_min                   =-120,      # palette starts at this level
