@@ -108,7 +108,7 @@ op.set_defaults(
     cpu_load_interval       = 3.0,      # cycle time for CPU monitor thread
     fullscreen              = False,    # Use full screen mode? (if not LCD4)
     hamlib                  = True,     # Using Hamlib? T/F (RPi-False)
-    hamlib_device           = "/dev/tty.SLAB_USBtoUART",   # Device address for Hamlib I/O
+    hamlib_device           = "/dev/ttyUSB0",   # Device address for Hamlib I/O
     hamlib_interval         = 1.0,      # Wait between hamlib freq. checks (secs)    
     hamlib_rigtype          = 2031,     # Kenwood ts-590s
     index                   = -1,       # index of audio device (-1 use default)
