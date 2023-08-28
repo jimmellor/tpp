@@ -146,7 +146,7 @@ if opt.hamlib:
     opt.control = "hamlib"
 if opt.source_rtl:
     opt.source = "rtl"
-    opt.control= "rtl"
+    opt.control= "hamlib"
 else:
     opt.source = "audio"
     if opt.control_si570:
