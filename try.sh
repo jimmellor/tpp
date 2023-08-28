@@ -12,7 +12,7 @@
 #python iq.py --index=-1 --size=256 --n_buffers=6 --WATERFALL --HAMLIB
 
 # RTL Test, BBB  ~95% cpu  [ Set extra RTL delay in iq.py to zero]
-python3 iq.py --RTL --WATERFALL --n_buffers=10 --size=384 
+python iq.py --RTL --WATERFALL --n_buffers=10 --size=384 
 
 # Audio test, PC, Si570 / SoftRock
 #python3 iq.py --SI570 --WATERFALL --index=0 --size=512 --n_buffers=8 --rate=48000
