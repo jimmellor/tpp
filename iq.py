@@ -616,23 +616,26 @@ def handle_touch_fft_size_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer, w_spectra, h_2d
+    global touch_feedback_msg, touch_feedback_timer, w_spectra, h_2d, myDSP
     
     # Define FFT size adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease FFT size
         if opt.size > 64:
             opt.size = opt.size // 2
+            myDSP.update_window()
             touch_feedback_msg = f"FFT size: {opt.size}"
         else:
             touch_feedback_msg = "Min FFT size reached"
         touch_feedback_timer = 60
     elif x < 2 * w_main / 3:  # Middle third - reset FFT size
         opt.size = 384
+        myDSP.update_window()
         touch_feedback_msg = f"FFT size reset: {opt.size}"
         touch_feedback_timer = 60
     else:  # Right third - increase FFT size
         if opt.size < 1024 and opt.size * 2 <= w_spectra:
             opt.size = opt.size * 2
+            myDSP.update_window()
             touch_feedback_msg = f"FFT size: {opt.size}"
         else:
             touch_feedback_msg = "Max FFT size reached"
@@ -861,7 +864,7 @@ def handle_spectrum_touch_controls(x, y, dx, dy):
         dx: horizontal movement
         dy: vertical movement
     """
-    global sp_min, sp_max, touch_feedback_msg, touch_feedback_timer, mygraticule, surf_2d_graticule, w_spectra
+    global sp_min, sp_max, touch_feedback_msg, touch_feedback_timer, mygraticule, surf_2d_graticule, w_spectra, myDSP
     
     # Adjust spectrum dB limits with vertical movement
     if abs(dy) > 5:
@@ -903,12 +906,14 @@ def handle_spectrum_touch_controls(x, y, dx, dy):
                 new_size = opt.size * 2
                 if new_size <= w_spectra and new_size <= 1024:
                     opt.size = new_size
+                    myDSP.update_window()
                     touch_feedback_msg = f"FFT size: {opt.size}"
                     touch_feedback_timer = 30
             elif dx < 0 and dy > 0:  # Diagonal down-left - decrease FFT size
                 new_size = opt.size // 2
                 if new_size >= 64:
                     opt.size = new_size
+                    myDSP.update_window()
                     touch_feedback_msg = f"FFT size: {opt.size}"
                     touch_feedback_timer = 30
 

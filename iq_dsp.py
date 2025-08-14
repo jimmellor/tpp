@@ -41,9 +41,20 @@ class DSP(object):
             self.w[i] = 0.5 * (1. - math.cos((2*math.pi*i)/(self.opt.size-1)))
         return
 
+    def update_window(self):
+        """Update the window function when FFT size changes"""
+        self.w = np.empty(self.opt.size)
+        for i in range(self.opt.size):
+            self.w[i] = 0.5 * (1. - math.cos((2*math.pi*i)/(self.opt.size-1)))
+        return
+
     def GetLogPowerSpectrum(self, data):
         size = self.opt.size            # size of FFT in I,Q samples.
         power_spectrum = np.zeros(size)
+
+        # Ensure window function matches the current FFT size
+        if len(self.w) != size:
+            self.update_window()
 
         # Time-domain analysis: Often we have long normal signals interrupted
         # by huge wide-band pulses that degrade our power spectrum average.
