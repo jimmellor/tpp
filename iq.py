@@ -121,7 +121,10 @@ print("v_min, max    :", opt.v_min, opt.v_max)
 print("PCM290x lagfix:", opt.lagfix)
 if opt.lcd4:
     print("LCD4 brightnes:", opt.lcd4_brightness)
-    print("Touchscreen   : Enabled for dB control")
+    print("Touchscreen   : Simplified zone-based control")
+    print("Left area: Frequency control (if enabled)")
+    print("Right area: dB scale control (always active)")
+    print("Middle area: No touch control")
     if opt.control == "none":
         print("Frequency control: None - use --SI570, --RTL, or --HAMLIB to enable")
     else:
@@ -263,6 +266,49 @@ def handle_touch_parameter_change(dx, dy):
                         mywf.set_range(v_min, v_max)
                         touch_feedback_msg = f"WF lower: {v_min} dB"
                         touch_feedback_timer = 30
+
+def handle_db_scale_adjustment(dy):
+    """Handle simple dB scale adjustments with vertical touch movement
+    Args:
+        dy: vertical movement in pixels (positive = down, negative = up)
+    """
+    global sp_min, sp_max, v_min, v_max, touch_feedback_msg, touch_feedback_timer, mygraticule, mywf, surf_2d_graticule
+    
+    # Simple rule: UP = more sensitive (wider dB range), DOWN = less sensitive (narrower dB range)
+    if dy < 0:  # Moving UP - make scale more sensitive (wider dB range)
+        # Increase upper limit and decrease lower limit
+        if sp_max < 0:
+            sp_max += 5
+        if sp_min > -140:
+            sp_min -= 5
+        touch_feedback_msg = f"More sensitive: {sp_min} to {sp_max} dB"
+    else:  # Moving DOWN - make scale less sensitive (narrower dB range)
+        # Decrease upper limit and increase lower limit
+        if sp_max > -130 and sp_max > sp_min + 10:
+            sp_max -= 5
+        if sp_min < sp_max - 10:
+            sp_min += 5
+        touch_feedback_msg = f"Less sensitive: {sp_min} to {sp_max} dB"
+    
+    # Update the graticule
+    mygraticule.set_range(sp_min, sp_max)
+    surf_2d_graticule = mygraticule.make()
+    touch_feedback_timer = 30
+    
+    # Also adjust waterfall palette if enabled
+    if opt.waterfall:
+        if dy < 0:  # Moving UP - more sensitive
+            if v_max < -10:
+                v_max += 5
+            if v_min > -130:
+                v_min -= 5
+        else:  # Moving DOWN - less sensitive
+            if v_max > v_min + 20:
+                v_max -= 5
+            if v_min < v_max - 20:
+                v_min += 5
+        
+        mywf.set_range(v_min, v_max)
 
 def handle_touch_gesture(touch1_pos, touch2_pos):
     """Handle multi-touch gestures for advanced controls
@@ -796,40 +842,52 @@ def draw_touch_zones(surface):
     """
     global h_2d, w_main, BLUE_GRAY
     
-    # Always draw dB scale zones (horizontal for landscape) - these work without frequency control
-    db_zone1 = w_main / 3
-    db_zone2 = 2 * w_main / 3
+    # Draw dB control area (right third of screen)
+    db_control_x = w_main * 2/3
     
-    # Draw horizontal lines for dB zones
-    pg.draw.line(surface, BLUE_GRAY, (db_zone1, 0), (db_zone1, h_2d), 1)
-    pg.draw.line(surface, BLUE_GRAY, (db_zone2, 0), (db_zone2, h_2d), 1)
+    # Draw vertical line to separate dB control area
+    pg.draw.line(surface, (0, 255, 0), (db_control_x, 0), (db_control_x, h_2d), 2)  # Green line
     
-    # Add rotated dB zone labels
-    font = pg.font.SysFont('sans', 10)
-    draw_rotated_text(surface, "Upper dB", font, BLUE_GRAY, (db_zone1/2, h_2d - 20), 270)
-    draw_rotated_text(surface, "Lower dB", font, BLUE_GRAY, (db_zone2 + db_zone2/2, h_2d - 20), 270)
+    # Add dB control area label
+    font = pg.font.SysFont('sans', 12)
+    draw_rotated_text(surface, "dB Control", font, (0, 255, 0), (db_control_x + (w_main - db_control_x)/2, h_2d - 20), 270)
     
-    # Only draw frequency zones if frequency control is available AND touch freq control is enabled
+    # Add instruction text
+    draw_rotated_text(surface, "Drag UP = More Sensitive", font, (0, 255, 0), (db_control_x + (w_main - db_control_x)/2, h_2d - 40), 270)
+    draw_rotated_text(surface, "Drag DOWN = Less Sensitive", font, (0, 255, 0), (db_control_x + (w_main - db_control_x)/2, h_2d - 60), 270)
+    
+    # Draw frequency control area (left third of screen) - only if frequency control is available
+    freq_control_x = w_main * 1/3
+    
+    # Draw middle area label (neutral zone)
+    middle_x = w_main * 1/2
+    draw_rotated_text(surface, "Neutral Zone", font, (128, 128, 128), (middle_x, h_2d - 20), 270)
+    
     if opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
-        # Draw zone boundaries for landscape orientation
-        # Frequency zones are now vertical (Y-axis)
+        # Draw vertical line to separate frequency control area
+        pg.draw.line(surface, (255, 255, 0), (freq_control_x, 0), (freq_control_x, h_2d), 2)  # Yellow line
+        
+        # Add frequency control area label
+        draw_rotated_text(surface, "Freq Control", font, (255, 255, 0), (freq_control_x/2, h_2d - 20), 270)
+        
+        # Draw frequency zone boundaries
         zone1_y = h_2d / 3
         zone2_y = 2 * h_2d / 3
         
-        # Draw vertical lines to separate frequency zones
-        pg.draw.line(surface, BLUE_GRAY, (zone1_y, 0), (zone1_y, w_main), 2)
-        pg.draw.line(surface, BLUE_GRAY, (zone2_y, 0), (zone2_y, w_main), 2)
+        # Draw horizontal lines to separate frequency zones
+        pg.draw.line(surface, (255, 255, 0), (0, zone1_y), (freq_control_x, zone1_y), 1)
+        pg.draw.line(surface, (255, 255, 0), (0, zone2_y), (freq_control_x, zone2_y), 1)
         
-        # Draw rotated frequency zone labels
-        draw_rotated_text(surface, "High Freq", font, BLUE_GRAY, (zone1_y/2, 20), 270)
-        draw_rotated_text(surface, "Mid Freq", font, BLUE_GRAY, (zone1_y + zone1_y/2, 20), 270)
-        draw_rotated_text(surface, "Low Freq", font, BLUE_GRAY, (zone2_y + zone1_y/2, 20), 270)
+        # Draw frequency zone labels
+        draw_rotated_text(surface, "High Freq", font, (255, 255, 0), (freq_control_x/2, zone1_y/2), 270)
+        draw_rotated_text(surface, "Mid Freq", font, (255, 255, 0), (freq_control_x/2, zone1_y + zone1_y/2), 270)
+        draw_rotated_text(surface, "Low Freq", font, (255, 255, 0), (freq_control_x/2, zone2_y + zone1_y/2), 270)
     elif opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available):
         # Frequency control available but touch freq control disabled
-        draw_rotated_text(surface, "Touch Freq Disabled", font, (255, 255, 128), (h_2d/2, 20), 270)
+        draw_rotated_text(surface, "Touch Freq Disabled", font, (255, 255, 128), (freq_control_x/2, h_2d - 20), 270)
     else:
         # Show message that no frequency control is available
-        draw_rotated_text(surface, "No Freq Control", font, (255, 128, 128), (h_2d/2, 20), 270)
+        draw_rotated_text(surface, "No Freq Control", font, (255, 128, 128), (freq_control_x/2, h_2d - 20), 270)
 
 def draw_rotated_text(surface, text, font, color, position, angle=90):
     """Draw text rotated by the specified angle
@@ -1528,11 +1586,13 @@ while True:
                     lines.append("Change rcvr freq: (rt arrow) increase; (lt arrow) decrease")
                     lines.append("   Use SHIFT for bigger steps")
                     if opt.touch_freq_control:
-                        lines.append("TOUCH: Drag VERTICALLY to change frequency (landscape)")
+                        lines.append("TOUCH: Left area - Drag VERTICALLY to change frequency")
                         lines.append("   Fine control: small movements, Coarse: large movements")
                     else:
-                        lines.append("TOUCH: Drag VERTICALLY disabled (use --touch_freq_control)")
-                    lines.append("   Drag HORIZONTALLY to adjust spectrum dB limits")
+                        lines.append("TOUCH: Left area - Drag VERTICALLY disabled (use --touch_freq_control)")
+                    lines.append("   Right area - Drag VERTICALLY to adjust dB scale")
+                    lines.append("   UP = More sensitive, DOWN = Less sensitive")
+                    lines.append("   Middle area - No touch control")
                     lines.append("   Tap zones for frequency presets")
                     lines.append("   Double-tap to reset display")
                 lines.append("RETURN - Cycle to next Help screen")
@@ -1702,23 +1762,22 @@ while True:
                 dx = current_x - touch_start_x
                 dy = current_y - touch_start_y
                 
-                # Only process if movement is significant
-                if abs(dx) > 5 or abs(dy) > 5:
-                    # HORIZONTAL movement for dB scale adjustments (landscape orientation)
-                    if abs(dx) > abs(dy):
-                        # Handle spectrum controls
-                        handle_spectrum_touch_controls(current_x, current_y, dx, dy)
-                        # Handle waterfall controls if enabled
-                        if opt.waterfall:
-                            handle_waterfall_touch_controls(current_x, current_y, dx, dy)
-                    
-                                                    # VERTICAL movement for frequency changes (landscape orientation) - only if control available AND touch freq control enabled
-                    elif abs(dy) > abs(dx) and opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
-                        handle_touch_frequency_change(dx, dy, opt.control)
-                    
-                    # Update start position for next movement
-                    touch_start_x = current_x
-                    touch_start_y = current_y
+                        # Only process if movement is significant
+        if abs(dx) > 5 or abs(dy) > 5:
+            # Check if touch is in the dB scale area (right side of screen)
+            if current_x > w_main * 2/3:  # Right third of screen is dB control area
+                # Handle dB scale adjustments with vertical movement
+                if abs(dy) > abs(dx):
+                    handle_db_scale_adjustment(dy)
+            # Check if touch is in the frequency control area (left side of screen) and frequency control is enabled
+            elif current_x < w_main * 1/3 and opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
+                # Handle frequency changes with vertical movement
+                if abs(dy) > abs(dx):
+                    handle_touch_frequency_change(dx, dy, opt.control)
+            
+            # Update start position for next movement
+            touch_start_x = current_x
+            touch_start_y = current_y
                     
         elif event.type == pg.KEYDOWN:
             if info_phase <= 1:         # Normal op. (0) or help phase 1 (1)
