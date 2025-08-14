@@ -145,7 +145,7 @@ def handle_touch_frequency_change(dx, dy, control_type):
         dy: vertical movement in pixels  
         control_type: type of frequency control (rtl, si570, hamlib)
     """
-    global touch_freq_step, touch_freq_step_coarse, touch_feedback_msg, touch_feedback_timer, rigfreq_request
+    global touch_freq_step, touch_freq_step_coarse, touch_feedback_msg, touch_feedback_timer, rigfreq_request, dataIn, mysi570, rigfreq
     
     # Use VERTICAL movement for frequency changes (landscape orientation)
     if abs(dy) > abs(dx):  # Vertical movement dominates
@@ -173,7 +173,6 @@ def handle_touch_frequency_change(dx, dy, control_type):
             
         elif control_type == 'hamlib':
             # Hamlib frequency control
-            global rigfreq_request
             new_freq = rigfreq + freq_change
             rigfreq_request = new_freq
             touch_feedback_msg = f"Hamlib: {freq_change:+.1f} kHz"
@@ -796,14 +795,11 @@ def draw_touch_zones(surface):
         
         # Add zone labels rotated for landscape
         font = pg.font.SysFont('sans', 10)
-        label1 = font.render("High Freq", 1, BLUE_GRAY)
-        label2 = font.render("Mid Freq", 1, BLUE_GRAY)
-        label3 = font.render("Low Freq", 1, BLUE_GRAY)
         
-        # Position labels for landscape orientation
-        surface.blit(label1, (zone1_y/2 - 15, 5))
-        surface.blit(label2, (zone1_y + zone1_y/2 - 15, 5))
-        surface.blit(label3, (zone2_y + zone1_y/2 - 15, 5))
+        # Draw rotated frequency zone labels
+        draw_rotated_text(surface, "High Freq", font, BLUE_GRAY, (zone1_y/2, 20), 90)
+        draw_rotated_text(surface, "Mid Freq", font, BLUE_GRAY, (zone1_y + zone1_y/2, 20), 90)
+        draw_rotated_text(surface, "Low Freq", font, BLUE_GRAY, (zone2_y + zone1_y/2, 20), 90)
         
         # Draw dB scale zones (horizontal for landscape)
         db_zone1 = w_main / 3
@@ -813,12 +809,34 @@ def draw_touch_zones(surface):
         pg.draw.line(surface, BLUE_GRAY, (db_zone1, 0), (db_zone1, h_2d), 1)
         pg.draw.line(surface, BLUE_GRAY, (db_zone2, 0), (db_zone2, h_2d), 1)
         
-        # Add dB zone labels
-        db_label1 = font.render("Upper dB", 1, BLUE_GRAY)
-        db_label2 = font.render("Lower dB", 1, BLUE_GRAY)
-        
-        surface.blit(db_label1, (db_zone1/2 - 20, h_2d - 20))
-        surface.blit(db_label2, (db_zone2 + db_zone2/2 - 20, h_2d - 20))
+        # Add rotated dB zone labels
+        draw_rotated_text(surface, "Upper dB", font, BLUE_GRAY, (db_zone1/2, h_2d - 20), 90)
+        draw_rotated_text(surface, "Lower dB", font, BLUE_GRAY, (db_zone2 + db_zone2/2, h_2d - 20), 90)
+
+def draw_rotated_text(surface, text, font, color, position, angle=90):
+    """Draw text rotated by the specified angle
+    Args:
+        surface: pygame surface to draw on
+        text: text string to render
+        font: pygame font object
+        color: text color
+        position: (x, y) position for the text
+        angle: rotation angle in degrees (default 90 for landscape)
+    """
+    # Render the text
+    text_surface = font.render(text, True, color)
+    
+    # Rotate the text surface
+    rotated_surface = pg.transform.rotate(text_surface, angle)
+    
+    # Get the rectangle of the rotated surface
+    rotated_rect = rotated_surface.get_rect()
+    
+    # Position the rotated text
+    rotated_rect.center = position
+    
+    # Draw the rotated text
+    surface.blit(rotated_surface, rotated_rect)
 
 def draw_touch_feedback(surface):
     """Draw touch feedback messages with fade-out effect
@@ -876,28 +894,9 @@ def draw_touch_feedback(surface):
         # Get current dB values
         db_text = f"dB: {sp_min} to {sp_max}"
         
-        # Render frequency text
-        freq_surface = font.render(freq_text, True, (255, 255, 0))  # Yellow
-        freq_rect = freq_surface.get_rect()
-        freq_rect.topleft = (10, 10)
-        
-        # Render dB text
-        db_surface = font.render(db_text, True, (0, 255, 255))  # Cyan
-        db_rect = db_surface.get_rect()
-        db_rect.topleft = (10, 30)
-        
-        # Draw background for better visibility
-        bg_freq = freq_rect.inflate(10, 5)
-        bg_db = db_rect.inflate(10, 5)
-        bg_surface_freq = pg.Surface(bg_freq.size, pg.SRCALPHA)
-        bg_surface_db = pg.Surface(bg_db.size, pg.SRCALPHA)
-        bg_surface_freq.fill((0, 0, 0, 180))
-        bg_surface_db.fill((0, 0, 0, 180))
-        
-        surface.blit(bg_surface_freq, bg_freq)
-        surface.blit(bg_surface_db, bg_db)
-        surface.blit(freq_surface, freq_rect)
-        surface.blit(db_surface, db_rect)
+        # Draw rotated text for landscape orientation
+        draw_rotated_text(surface, freq_text, font, (255, 255, 0), (50, 50), 90)  # Yellow
+        draw_rotated_text(surface, db_text, font, (0, 255, 255), (50, 100), 90)   # Cyan
 
 def handle_waterfall_touch_controls(x, y, dx, dy):
     """Handle touch controls specific to waterfall display
@@ -1129,7 +1128,7 @@ if opt.hamlib:
             # set to the new frequency, otherwise = None.
             if rigfreq_request:         # ordering of loop speeds up freq change
                 if rigfreq_request != rigfreq:
-                    rig.set_freq(rigfreq_request*1000.)
+                    rig.set_freq(rigfreq_request*1000)
                     rigfreq_request = None
             rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
             time.sleep(interval)
@@ -1459,7 +1458,10 @@ while True:
                 button_vloc = [ 20, 70, 120, 170, 220 ]
                 button_surfs = []
                 for bb in button_names:
-                    button_surfs.append(medfont.render(bb, 1, WHITE, BLACK))
+                    button_surface = medfont.render(bb, 1, WHITE, BLACK)
+                    # Rotate button text for landscape orientation
+                    button_surface = pg.transform.rotate(button_surface, 90)
+                    button_surfs.append(button_surface)
 
             # Help info will be placed toward top of window.
             # Info comes in 4 phases (0 - 3), cycle among them with <return>
@@ -1503,6 +1505,9 @@ while True:
             for ix,x in enumerate(lines):
                 help_matter.blit(medfont.render(x, 1, TCOLOR2), (20,ix*wh[1]+15))
             
+            # Rotate the help surface for landscape orientation
+            help_matter = pg.transform.rotate(help_matter, 90)
+            
             # "Live" info is placed toward bottom of window...
             # Width of this surface is a guess. (It should be computed.)
             live_surface = pg.Surface((430,48), 0)
@@ -1521,6 +1526,9 @@ while True:
             msg = "Load usr=%3.2f; sys=%3.2f; load avg=%.2f" % \
                 (cpu_usage[0], cpu_usage[1], cpu_usage[2])
             live_surface.blit(medfont.render(msg, 1, TCOLOR2), (200, 32))
+            
+            # Rotate the live surface for landscape orientation
+            live_surface = pg.transform.rotate(live_surface, 90)
         # Blit newly formatted -- or old -- screen to main surface.
         if place_buttons:   # Do we have rt hand buttons to place?
             for ix, bb in enumerate(button_surfs):
