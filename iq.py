@@ -83,6 +83,7 @@ touch_freq_step = opt.touch_sensitivity  # Frequency change per pixel movement
 touch_freq_step_coarse = opt.touch_coarse_sensitivity  # kHz per pixel for coarse control
 touch_feedback_msg = ""
 touch_feedback_timer = 0
+touch_feedback_alpha = 255  # Alpha value for fade-out effect
 touch_gesture_start = False
 touch_gesture_distance = 0
 touch_last_tap_time = 0
@@ -146,11 +147,11 @@ def handle_touch_frequency_change(dx, dy, control_type):
     """
     global touch_freq_step, touch_freq_step_coarse, touch_feedback_msg, touch_feedback_timer, rigfreq_request
     
-    # Use horizontal movement for frequency changes
-    if abs(dx) > abs(dy):  # Horizontal movement dominates
-        freq_change = dx * touch_freq_step
-        if abs(dx) > 20:  # Coarse adjustment for larger movements
-            freq_change = dx * touch_freq_step_coarse
+    # Use VERTICAL movement for frequency changes (landscape orientation)
+    if abs(dy) > abs(dx):  # Vertical movement dominates
+        freq_change = -dy * touch_freq_step  # Negative because Y increases downward
+        if abs(dy) > 20:  # Coarse adjustment for larger movements
+            freq_change = -dy * touch_freq_step_coarse
             
         if control_type == 'rtl':
             # RTL frequency control
@@ -187,34 +188,34 @@ def handle_touch_parameter_change(dx, dy):
     """
     global sp_min, sp_max, v_min, v_max, touch_feedback_msg, touch_feedback_timer, mygraticule, mywf, surf_2d_graticule
     
-    # Vertical movement for spectrum and waterfall adjustments
-    if abs(dy) > 5:
+    # HORIZONTAL movement for dB scale adjustments (landscape orientation)
+    if abs(dx) > 5:
         # Adjust spectrum dB limits
-        if dy > 0:  # Moving down - decrease upper limit
-            if sp_max > -130 and sp_max > sp_min + 10:
-                sp_max -= 5
-                mygraticule.set_range(sp_min, sp_max)
-                surf_2d_graticule = mygraticule.make()
-                touch_feedback_msg = f"Upper dB: {sp_max} dB"
-                touch_feedback_timer = 30
-        else:  # Moving up - increase upper limit
+        if dx > 0:  # Moving right - increase upper limit
             if sp_max < 0:
                 sp_max += 5
                 mygraticule.set_range(sp_min, sp_max)
                 surf_2d_graticule = mygraticule.make()
                 touch_feedback_msg = f"Upper dB: {sp_max} dB"
                 touch_feedback_timer = 30
+        else:  # Moving left - decrease upper limit
+            if sp_max > -130 and sp_max > sp_min + 10:
+                sp_max -= 5
+                mygraticule.set_range(sp_min, sp_max)
+                surf_2d_graticule = mygraticule.make()
+                touch_feedback_msg = f"Upper dB: {sp_max} dB"
+                touch_feedback_timer = 30
         
-        # Also adjust lower dB limit with horizontal movement
-        if abs(dx) > 5:
-            if dx > 0:  # Moving right - increase lower limit
+        # Also adjust lower dB limit with vertical movement
+        if abs(dy) > 5:
+            if dy > 0:  # Moving down - increase lower limit
                 if sp_min < sp_max - 10:
                     sp_min += 5
                     mygraticule.set_range(sp_min, sp_max)
                     surf_2d_graticule = mygraticule.make()
                     touch_feedback_msg = f"Lower dB: {sp_min} dB"
                     touch_feedback_timer = 30
-            else:  # Moving left - decrease lower limit
+            else:  # Moving up - decrease lower limit
                 if sp_min > -140:
                     sp_min -= 5
                     mygraticule.set_range(sp_min, sp_max)
@@ -224,28 +225,28 @@ def handle_touch_parameter_change(dx, dy):
         
         # Adjust waterfall palette if enabled
         if opt.waterfall:
-            if dy > 0:  # Moving down - decrease upper threshold
-                if v_max > v_min + 20:
-                    v_max -= 5
-                    mywf.set_range(v_min, v_max)
-                    touch_feedback_msg = f"WF upper: {v_max} dB"
-                    touch_feedback_timer = 30
-            else:  # Moving up - increase upper threshold
+            if dx > 0:  # Moving right - increase upper threshold
                 if v_max < -10:
                     v_max += 5
                     mywf.set_range(v_min, v_max)
                     touch_feedback_msg = f"WF upper: {v_max} dB"
                     touch_feedback_timer = 30
+            else:  # Moving left - decrease upper threshold
+                if v_max > v_min + 20:
+                    v_max -= 5
+                    mywf.set_range(v_min, v_max)
+                    touch_feedback_msg = f"WF upper: {v_max} dB"
+                    touch_feedback_timer = 30
             
-            # Also adjust lower threshold with horizontal movement
-            if abs(dx) > 5:
-                if dx > 0:  # Moving right - increase lower threshold
+            # Also adjust lower threshold with vertical movement
+            if abs(dy) > 5:
+                if dy > 0:  # Moving down - increase lower threshold
                     if v_min < v_max - 20:
                         v_min += 5
                         mywf.set_range(v_min, v_max)
                         touch_feedback_msg = f"WF lower: {v_min} dB"
                         touch_feedback_timer = 30
-                else:  # Moving left - decrease lower threshold
+                else:  # Moving up - decrease lower threshold
                     if v_min > -130:
                         v_min -= 5
                         mywf.set_range(v_min, v_max)
@@ -778,29 +779,125 @@ def handle_touch_display_mode_switch(x, y):
         touch_feedback_timer = 60
 
 def draw_touch_zones(surface):
-    """Draw visual indicators for touch zones on the screen
+    """Draw visual indicators for touch zones on the screen (landscape orientation)
     Args:
         surface: pygame surface to draw on
     """
     global h_2d, w_main, BLUE_GRAY
     if opt.control in ['rtl', 'si570', 'hamlib']:
-        # Draw zone boundaries
+        # Draw zone boundaries for landscape orientation
+        # Frequency zones are now vertical (Y-axis)
         zone1_y = h_2d / 3
         zone2_y = 2 * h_2d / 3
         
-        # Draw horizontal lines to separate zones
-        pg.draw.line(surface, BLUE_GRAY, (0, zone1_y), (w_main, zone1_y), 2)
-        pg.draw.line(surface, BLUE_GRAY, (0, zone2_y), (w_main, zone2_y), 2)
+        # Draw vertical lines to separate frequency zones
+        pg.draw.line(surface, BLUE_GRAY, (zone1_y, 0), (zone1_y, w_main), 2)
+        pg.draw.line(surface, BLUE_GRAY, (zone2_y, 0), (zone2_y, w_main), 2)
         
-        # Add zone labels
+        # Add zone labels rotated for landscape
         font = pg.font.SysFont('sans', 10)
         label1 = font.render("High Freq", 1, BLUE_GRAY)
         label2 = font.render("Mid Freq", 1, BLUE_GRAY)
         label3 = font.render("Low Freq", 1, BLUE_GRAY)
         
-        surface.blit(label1, (5, zone1_y/2 - 5))
-        surface.blit(label2, (5, zone1_y + zone1_y/2 - 5))
-        surface.blit(label3, (5, zone2_y + zone1_y/2 - 5))
+        # Position labels for landscape orientation
+        surface.blit(label1, (zone1_y/2 - 15, 5))
+        surface.blit(label2, (zone1_y + zone1_y/2 - 15, 5))
+        surface.blit(label3, (zone2_y + zone1_y/2 - 15, 5))
+        
+        # Draw dB scale zones (horizontal for landscape)
+        db_zone1 = w_main / 3
+        db_zone2 = 2 * w_main / 3
+        
+        # Draw horizontal lines for dB zones
+        pg.draw.line(surface, BLUE_GRAY, (db_zone1, 0), (db_zone1, h_2d), 1)
+        pg.draw.line(surface, BLUE_GRAY, (db_zone2, 0), (db_zone2, h_2d), 1)
+        
+        # Add dB zone labels
+        db_label1 = font.render("Upper dB", 1, BLUE_GRAY)
+        db_label2 = font.render("Lower dB", 1, BLUE_GRAY)
+        
+        surface.blit(db_label1, (db_zone1/2 - 20, h_2d - 20))
+        surface.blit(db_label2, (db_zone2 + db_zone2/2 - 20, h_2d - 20))
+
+def draw_touch_feedback(surface):
+    """Draw touch feedback messages with fade-out effect
+    Args:
+        surface: pygame surface to draw on
+    """
+    global touch_feedback_msg, touch_feedback_timer, touch_feedback_alpha, dataIn, mysi570, rigfreq, sp_min, sp_max
+    
+    if touch_feedback_msg and touch_feedback_timer > 0:
+        # Create font for feedback
+        font = pg.font.SysFont('sans', 18)
+        
+        # Render text with current alpha
+        text_surface = font.render(touch_feedback_msg, True, (255, 255, 255))
+        text_surface.set_alpha(touch_feedback_alpha)
+        
+        # Position text in center of screen for landscape orientation
+        text_rect = text_surface.get_rect()
+        text_rect.center = (w_main // 2, h_2d // 2)
+        
+        # Draw background rectangle for better visibility
+        bg_rect = text_rect.inflate(20, 10)
+        bg_surface = pg.Surface(bg_rect.size, pg.SRCALPHA)
+        bg_surface.fill((0, 0, 0, min(180, touch_feedback_alpha)))
+        surface.blit(bg_surface, bg_rect)
+        
+        # Draw text
+        surface.blit(text_surface, text_rect)
+        
+        # Update alpha for fade effect
+        if touch_feedback_timer <= 10:  # Start fading in last 10 frames
+            touch_feedback_alpha = max(0, touch_feedback_alpha - 25)
+        else:
+            touch_feedback_alpha = min(255, touch_feedback_alpha + 25)
+        
+        touch_feedback_timer -= 1
+    
+    # Show real-time values during touch
+    if touch_active:
+        # Create font for real-time display
+        font = pg.font.SysFont('sans', 14)
+        
+        # Get current frequency
+        if opt.control == 'rtl':
+            current_freq = dataIn.rtl.get_center_freq() / 1e6  # Convert to MHz
+            freq_text = f"Freq: {current_freq:.3f} MHz"
+        elif opt.control == 'si570':
+            current_freq = mysi570.getFreqByValue()
+            freq_text = f"Freq: {current_freq:.3f} MHz"
+        elif opt.hamlib:
+            freq_text = f"Freq: {rigfreq:.1f} kHz"
+        else:
+            freq_text = "Freq: N/A"
+        
+        # Get current dB values
+        db_text = f"dB: {sp_min} to {sp_max}"
+        
+        # Render frequency text
+        freq_surface = font.render(freq_text, True, (255, 255, 0))  # Yellow
+        freq_rect = freq_surface.get_rect()
+        freq_rect.topleft = (10, 10)
+        
+        # Render dB text
+        db_surface = font.render(db_text, True, (0, 255, 255))  # Cyan
+        db_rect = db_surface.get_rect()
+        db_rect.topleft = (10, 30)
+        
+        # Draw background for better visibility
+        bg_freq = freq_rect.inflate(10, 5)
+        bg_db = db_rect.inflate(10, 5)
+        bg_surface_freq = pg.Surface(bg_freq.size, pg.SRCALPHA)
+        bg_surface_db = pg.Surface(bg_db.size, pg.SRCALPHA)
+        bg_surface_freq.fill((0, 0, 0, 180))
+        bg_surface_db.fill((0, 0, 0, 180))
+        
+        surface.blit(bg_surface_freq, bg_freq)
+        surface.blit(bg_surface_db, bg_db)
+        surface.blit(freq_surface, freq_rect)
+        surface.blit(db_surface, db_rect)
 
 def handle_waterfall_touch_controls(x, y, dx, dy):
     """Handle touch controls specific to waterfall display
@@ -813,37 +910,37 @@ def handle_waterfall_touch_controls(x, y, dx, dy):
     global v_min, v_max, touch_feedback_msg, touch_feedback_timer, mywf
     
     if opt.waterfall:
-        # Adjust waterfall palette with vertical movement
-        if abs(dy) > 5:
-            if dy > 0:  # Moving down - decrease upper threshold
-                if v_max > v_min + 20:
-                    v_max -= 5
-                    mywf.set_range(v_min, v_max)
-                    touch_feedback_msg = f"WF upper: {v_max} dB"
-                    touch_feedback_timer = 30
-            else:  # Moving up - increase upper threshold
+        # Adjust waterfall palette with HORIZONTAL movement (landscape orientation)
+        if abs(dx) > 5:
+            if dx > 0:  # Moving right - increase upper threshold
                 if v_max < -10:
                     v_max += 5
                     mywf.set_range(v_min, v_max)
                     touch_feedback_msg = f"WF upper: {v_max} dB"
                     touch_feedback_timer = 30
+            else:  # Moving left - decrease upper threshold
+                if v_max > v_min + 20:
+                    v_max -= 5
+                    mywf.set_range(v_min, v_max)
+                    touch_feedback_msg = f"WF upper: {v_max} dB"
+                    touch_feedback_timer = 30
         
-        # Adjust waterfall palette with horizontal movement
-        if abs(dx) > 5:
-            if dx > 0:  # Moving right - increase lower threshold
+        # Adjust waterfall palette with VERTICAL movement (landscape orientation)
+        if abs(dy) > 5:
+            if dy > 0:  # Moving down - increase lower threshold
                 if v_min < v_max - 20:
                     v_min += 5
                     mywf.set_range(v_min, v_max)
                     touch_feedback_msg = f"WF lower: {v_min} dB"
                     touch_feedback_timer = 30
-            else:  # Moving left - decrease lower threshold
+            else:  # Moving up - decrease lower threshold
                 if v_min > -130:
                     v_min -= 5
                     mywf.set_range(v_min, v_max)
                     touch_feedback_msg = f"WF lower: {v_min} dB"
                     touch_feedback_timer = 30
         
-        # Adjust waterfall accumulation with diagonal movement
+        # Adjust waterfall accumulation with diagonal movement (landscape orientation)
         if abs(dx) > 10 and abs(dy) > 10:
             if dx > 0 and dy > 0:  # Diagonal down-right - increase accumulation
                 if opt.waterfall_accumulation < 20:
@@ -866,33 +963,33 @@ def handle_spectrum_touch_controls(x, y, dx, dy):
     """
     global sp_min, sp_max, touch_feedback_msg, touch_feedback_timer, mygraticule, surf_2d_graticule, w_spectra, myDSP
     
-    # Adjust spectrum dB limits with vertical movement
-    if abs(dy) > 5:
-        if dy > 0:  # Moving down - decrease upper limit
-            if sp_max > -130 and sp_max > sp_min + 10:
-                sp_max -= 5
-                mygraticule.set_range(sp_min, sp_max)
-                surf_2d_graticule = mygraticule.make()
-                touch_feedback_msg = f"Upper dB: {sp_max} dB"
-                touch_feedback_timer = 30
-        else:  # Moving up - increase upper limit
+    # Adjust spectrum dB limits with HORIZONTAL movement (landscape orientation)
+    if abs(dx) > 5:
+        if dx > 0:  # Moving right - increase upper limit
             if sp_max < 0:
                 sp_max += 5
                 mygraticule.set_range(sp_min, sp_max)
                 surf_2d_graticule = mygraticule.make()
                 touch_feedback_msg = f"Upper dB: {sp_max} dB"
                 touch_feedback_timer = 30
+        else:  # Moving left - decrease upper limit
+            if sp_max > -130 and sp_max > sp_min + 10:
+                sp_max -= 5
+                mygraticule.set_range(sp_min, sp_max)
+                surf_2d_graticule = mygraticule.make()
+                touch_feedback_msg = f"Upper dB: {sp_max} dB"
+                touch_feedback_timer = 30
     
-    # Adjust spectrum dB limits with horizontal movement
-    if abs(dx) > 5:
-        if dx > 0:  # Moving right - increase lower limit
+    # Adjust spectrum dB limits with VERTICAL movement (landscape orientation)
+    if abs(dy) > 5:
+        if dy > 0:  # Moving down - increase lower limit
             if sp_min < sp_max - 10:
                 sp_min += 5
                 mygraticule.set_range(sp_min, sp_max)
                 surf_2d_graticule = mygraticule.make()
                 touch_feedback_msg = f"Lower dB: {sp_min} dB"
                 touch_feedback_timer = 30
-        else:  # Moving left - decrease lower limit
+        else:  # Moving up - decrease lower limit
             if sp_min > -140:
                 sp_min -= 5
                 mygraticule.set_range(sp_min, sp_max)
@@ -900,7 +997,7 @@ def handle_spectrum_touch_controls(x, y, dx, dy):
                 touch_feedback_msg = f"Lower dB: {sp_min} dB"
                 touch_feedback_timer = 30
         
-        # Adjust FFT size with diagonal movement
+        # Adjust FFT size with diagonal movement (landscape orientation)
         if abs(dx) > 10 and abs(dy) > 10:
             if dx > 0 and dy < 0:  # Diagonal up-right - increase FFT size
                 new_size = opt.size * 2
@@ -1376,25 +1473,25 @@ while True:
                 if opt.control != "none":
                     lines.append("Change rcvr freq: (rt arrow) increase; (lt arrow) decrease")
                     lines.append("   Use SHIFT for bigger steps")
-                    lines.append("TOUCH: Drag horizontally to change frequency")
+                    lines.append("TOUCH: Drag VERTICALLY to change frequency (landscape)")
                     lines.append("   Fine control: small movements, Coarse: large movements")
-                    lines.append("   Drag vertically to adjust spectrum dB limits")
+                    lines.append("   Drag HORIZONTALLY to adjust spectrum dB limits")
                     lines.append("   Tap zones for frequency presets")
                     lines.append("   Double-tap to reset display")
                 lines.append("RETURN - Cycle to next Help screen")
             elif info_phase == 2:
-                lines = [ "SPECTRUM ADJUSTMENTS:",
-                          "UP - upper screen level +10 dB",
-                          "DOWN - upper screen level -10 dB",
-                          "RIGHT - lower screen level +10 dB",
-                          "LEFT - lower screen level -10 dB",
+                lines = [ "SPECTRUM ADJUSTMENTS (Landscape):",
+                          "RIGHT - upper screen level +10 dB",
+                          "LEFT - upper screen level -10 dB",
+                          "DOWN - lower screen level +10 dB",
+                          "UP - lower screen level -10 dB",
                           "RETURN - Cycle to next Help screen" ]
             elif info_phase == 3:
-                lines = [ "WATERFALL PALETTE ADJUSTMENTS:",
-                          "UP - upper threshold INCREASE",
-                          "DOWN - upper threshold DECREASE",
-                          "RIGHT - lower threshold INCREASE",
-                          "LEFT - lower threshold DECREASE",
+                lines = [ "WATERFALL PALETTE ADJUSTMENTS (Landscape):",
+                          "RIGHT - upper threshold INCREASE",
+                          "LEFT - upper threshold DECREASE",
+                          "DOWN - lower threshold INCREASE",
+                          "UP - lower threshold DECREASE",
                           "RETURN - Cycle Help screen OFF" ]
             else:
                 lines = [ "Invalid info phase!"]    # we should never arrive here.
@@ -1430,6 +1527,10 @@ while True:
                 surf_main.blit(bb, (449, button_vloc[ix]))
         surf_main.blit(help_matter, (20,20))
         surf_main.blit(live_surface,(20,SCREEN_SIZE[1]-60))
+    
+    # Draw touch feedback and zones
+    draw_touch_zones(surf_main)
+    draw_touch_feedback(surf_main)
 
     # Check for pygame events - keyboard, etc.
     # Note: A key press is not recorded as a PyGame event if you are 
@@ -1541,11 +1642,11 @@ while True:
                 
                 # Only process if movement is significant
                 if abs(dx) > 5 or abs(dy) > 5:
-                    # Horizontal movement for frequency changes
-                    if abs(dx) > abs(dy):
+                    # VERTICAL movement for frequency changes (landscape orientation)
+                    if abs(dy) > abs(dx):
                         handle_touch_frequency_change(dx, dy, opt.control)
-                    # Vertical movement for other parameter adjustments
-                    elif abs(dy) > abs(dx):
+                    # HORIZONTAL movement for dB scale adjustments (landscape orientation)
+                    elif abs(dx) > abs(dy):
                         # Handle spectrum controls
                         handle_spectrum_touch_controls(current_x, current_y, dx, dy)
                         # Handle waterfall controls if enabled
@@ -1562,25 +1663,25 @@ while True:
                 shifted = event.mod & (pg.KMOD_LSHIFT | pg.KMOD_RSHIFT)
                 if event.key == pg.K_q:
                     quit_all()
-                elif event.key == pg.K_u:            # 'u' or 'U' - chg upper dB
-                    if shifted:                         # 'U' move up
+                elif event.key == pg.K_u:            # 'u' or 'U' - chg upper dB (landscape: right/left)
+                    if shifted:                         # 'U' move right (increase upper dB)
                         if sp_max < 0:
                             sp_max += 10
-                    else:                               # 'u' move dn
+                    else:                               # 'u' move left (decrease upper dB)
                         if sp_max > -130 and sp_max > sp_min + 10:
                             sp_max -= 10
                     mygraticule.set_range(sp_min, sp_max)
                     surf_2d_graticule = mygraticule.make()
-                elif event.key == pg.K_l:            # 'l' or 'L' - chg lower dB
-                    if shifted:                         # 'L' move up lower dB
+                elif event.key == pg.K_l:            # 'l' or 'L' - chg lower dB (landscape: down/up)
+                    if shifted:                         # 'L' move down (increase lower dB)
                         if sp_min < sp_max -10:
                             sp_min += 10
-                    else:                               # 'l' move down lower dB
+                    else:                               # 'l' move up (decrease lower dB)
                         if sp_min > -140:
                             sp_min -= 10
                     mygraticule.set_range(sp_min, sp_max)
                     surf_2d_graticule = mygraticule.make()   
-                elif event.key == pg.K_b:            # 'b' or 'B' - chg upper pal.
+                elif event.key == pg.K_b:            # 'b' or 'B' - chg upper pal. (landscape: right/left)
                     if shifted:
                         if v_max < -10:
                             v_max += 10
@@ -1588,7 +1689,7 @@ while True:
                         if v_max > v_min + 20:
                             v_max -= 10
                     mywf.set_range(v_min,v_max)
-                elif event.key == pg.K_d:            # 'd' or 'D' - chg lower pal.
+                elif event.key == pg.K_d:            # 'd' or 'D' - chg lower pal. (landscape: down/up)
                     if shifted:
                         if v_min < v_max - 20:
                             v_min += 10
@@ -1642,25 +1743,25 @@ while True:
             # for each "phase" of the on-screen help system.
             
             elif info_phase == 2:               # Listen for info phase 2 keys
-                # Showing 2d spectrum gain/offset adjustments
+                # Showing 2d spectrum gain/offset adjustments (landscape orientation)
                 # Note: making graticule is moderately slow.  
                 # Do not repeat range changes too quickly!
-                if event.key == pg.K_UP:
+                if event.key == pg.K_RIGHT:  # Right arrow - increase upper dB (landscape)
                     if sp_max < 0:
                         sp_max += 10
                     mygraticule.set_range(sp_min, sp_max)
                     surf_2d_graticule = mygraticule.make()   
-                elif event.key == pg.K_DOWN:
+                elif event.key == pg.K_LEFT:  # Left arrow - decrease upper dB (landscape)
                     if sp_max > -130 and sp_max > sp_min + 10:
                         sp_max -= 10
                     mygraticule.set_range(sp_min, sp_max)
                     surf_2d_graticule = mygraticule.make()   
-                elif event.key == pg.K_RIGHT:
+                elif event.key == pg.K_DOWN:  # Down arrow - increase lower dB (landscape)
                     if sp_min < sp_max -10:
                         sp_min += 10
                     mygraticule.set_range(sp_min, sp_max)
                     surf_2d_graticule = mygraticule.make()   
-                elif event.key == pg.K_LEFT:
+                elif event.key == pg.K_UP:    # Up arrow - decrease lower dB (landscape)
                     if sp_min > -140:
                         sp_min -= 10
                     mygraticule.set_range(sp_min, sp_max)
@@ -1671,22 +1772,22 @@ while True:
                     info_counter = 0
 
             elif info_phase == 3:               # Listen for info phase 3 keys
-                # Showing waterfall pallette adjustments
+                # Showing waterfall palette adjustments (landscape orientation)
                 # Note: recalculating palette is quite slow.  
                 # Do not repeat range changes too quickly! (1 per second max?)
-                if event.key == pg.K_UP:
+                if event.key == pg.K_RIGHT:  # Right arrow - increase upper threshold (landscape)
                     if v_max < -10:
                         v_max += 10
                     mywf.set_range(v_min,v_max)
-                elif event.key == pg.K_DOWN:
+                elif event.key == pg.K_LEFT:  # Left arrow - decrease upper threshold (landscape)
                     if v_max > v_min + 20:
                         v_max -= 10
                     mywf.set_range(v_min,v_max)
-                elif event.key == pg.K_RIGHT:
+                elif event.key == pg.K_DOWN:  # Down arrow - increase lower threshold (landscape)
                     if v_min < v_max - 20:
                         v_min += 10
                     mywf.set_range(v_min,v_max)
-                elif event.key == pg.K_LEFT:
+                elif event.key == pg.K_UP:    # Up arrow - decrease lower threshold (landscape)
                     if v_min > -130:
                         v_min -= 10
                     mywf.set_range(v_min,v_max)
