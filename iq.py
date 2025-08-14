@@ -144,7 +144,7 @@ def handle_touch_frequency_change(dx, dy, control_type):
         dy: vertical movement in pixels  
         control_type: type of frequency control (rtl, si570, hamlib)
     """
-    global touch_freq_step, touch_freq_step_coarse, touch_feedback_msg, touch_feedback_timer
+    global touch_freq_step, touch_freq_step_coarse, touch_feedback_msg, touch_feedback_timer, rigfreq_request
     
     # Use horizontal movement for frequency changes
     if abs(dx) > abs(dy):  # Horizontal movement dominates
@@ -185,7 +185,7 @@ def handle_touch_parameter_change(dx, dy):
         dx: horizontal movement in pixels
         dy: vertical movement in pixels
     """
-    global sp_min, sp_max, v_min, v_max, touch_feedback_msg, touch_feedback_timer
+    global sp_min, sp_max, v_min, v_max, touch_feedback_msg, touch_feedback_timer, mygraticule, mywf, surf_2d_graticule
     
     # Vertical movement for spectrum and waterfall adjustments
     if abs(dy) > 5:
@@ -258,7 +258,7 @@ def handle_touch_gesture(touch1_pos, touch2_pos):
         touch1_pos: position of first touch (x, y)
         touch2_pos: position of second touch (x, y)
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, touch_freq_step
     
     # Calculate distance between touches for pinch gestures
     dx = touch2_pos[0] - touch1_pos[0]
@@ -284,7 +284,7 @@ def handle_swipe_gesture(start_x, start_y, end_x, end_y, duration):
         end_y: ending y position
         duration: duration of the swipe
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, rigfreq_request, dataIn, mysi570, rigfreq
     
     if duration < 0.5:  # Quick swipe
         dx = end_x - start_x
@@ -305,7 +305,6 @@ def handle_swipe_gesture(start_x, start_y, end_x, end_y, duration):
                 mysi570.setFreqByValue(new_freq / 1000.0)
                 touch_feedback_msg = f"Swipe: {freq_change:+.1f} kHz"
             elif opt.hamlib:
-                global rigfreq_request
                 new_freq = rigfreq + freq_change
                 rigfreq_request = new_freq
                 touch_feedback_msg = f"Swipe: {freq_change:+.1f} kHz"
@@ -346,7 +345,7 @@ def handle_touch_quick_settings(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, sp_min, sp_max, sp_min_def, sp_max_def, mygraticule, surf_2d_graticule, mywf, v_min, v_max, h_2d, w_main
     
     # Define quick settings zones based on screen position
     if y > 2 * h_2d / 3:  # Bottom third - quick settings
@@ -390,7 +389,7 @@ def handle_touch_tap(x, y):
         x: x position of tap
         y: y position of tap
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, rigfreq_request, dataIn, mysi570, h_2d
     
     # Define frequency preset zones based on screen position
     if y < h_2d / 3:  # Top third - high frequency presets
@@ -403,7 +402,6 @@ def handle_touch_tap(x, y):
             mysi570.setFreqByValue(preset_freq)
             touch_feedback_msg = f"Preset: 14.0 MHz"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 14000.0  # 14 MHz
             touch_feedback_msg = f"Preset: 14.0 MHz"
         touch_feedback_timer = 60
@@ -418,7 +416,6 @@ def handle_touch_tap(x, y):
             mysi570.setFreqByValue(preset_freq)
             touch_feedback_msg = f"Preset: 7.0 MHz"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 7000.0  # 7 MHz
             touch_feedback_msg = f"Preset: 7.0 MHz"
         touch_feedback_timer = 60
@@ -433,7 +430,6 @@ def handle_touch_tap(x, y):
             mysi570.setFreqByValue(preset_freq)
             touch_feedback_msg = f"Preset: 3.5 MHz"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 3500.0  # 3.5 MHz
             touch_feedback_msg = f"Preset: 3.5 MHz"
             touch_feedback_timer = 60
@@ -480,7 +476,7 @@ def handle_touch_skip_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, h_2d
     
     # Define skip adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease skip
@@ -508,7 +504,7 @@ def handle_touch_pulse_clip_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, h_2d
     
     # Define pulse clip adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease pulse clip threshold
@@ -536,7 +532,7 @@ def handle_touch_waterfall_accumulation_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, h_2d
     
     # Define waterfall accumulation adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease accumulation
@@ -564,7 +560,7 @@ def handle_touch_waterfall_palette_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, h_2d
     
     # Define waterfall palette adjustment zones based on screen position
     if x < w_main / 3:  # Left third - previous palette
@@ -592,7 +588,7 @@ def handle_touch_buffer_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, h_2d
     
     # Define buffer adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease buffer count
@@ -620,7 +616,7 @@ def handle_touch_fft_size_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, w_spectra, h_2d
     
     # Define FFT size adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease FFT size
@@ -648,7 +644,7 @@ def handle_touch_sample_rate_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, h_2d
     
     # Define sample rate adjustment zones based on screen position
     if x < w_main / 3:  # Left third - decrease sample rate
@@ -679,7 +675,7 @@ def handle_touch_gain_adjustment(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, dataIn, h_2d
     
     # Define gain adjustment zones based on screen position
     if x < w_main / 2:  # Left half - decrease gain
@@ -707,7 +703,7 @@ def handle_touch_frequency_band_switch(x, y):
         x: x position of touch
         y: y position of touch
     """
-    global touch_feedback_msg, touch_feedback_timer
+    global touch_feedback_msg, touch_feedback_timer, rigfreq_request, dataIn, mysi570, h_2d
     
     # Define frequency band zones based on screen position
     if y < h_2d / 4:  # Top quarter - HF bands
@@ -718,7 +714,6 @@ def handle_touch_frequency_band_switch(x, y):
             mysi570.setFreqByValue(14.0)
             touch_feedback_msg = "HF band (14 MHz)"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 14000.0
             touch_feedback_msg = "HF band (14 MHz)"
         touch_feedback_timer = 60
@@ -730,7 +725,6 @@ def handle_touch_frequency_band_switch(x, y):
             mysi570.setFreqByValue(146.0)
             touch_feedback_msg = "VHF band (146 MHz)"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 146000.0
             touch_feedback_msg = "VHF band (146 MHz)"
         touch_feedback_timer = 60
@@ -742,7 +736,6 @@ def handle_touch_frequency_band_switch(x, y):
             mysi570.setFreqByValue(440.0)
             touch_feedback_msg = "UHF band (440 MHz)"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 440000.0
             touch_feedback_msg = "UHF band (440 MHz)"
         touch_feedback_timer = 60
@@ -754,7 +747,6 @@ def handle_touch_frequency_band_switch(x, y):
             mysi570.setFreqByValue(3.5)
             touch_feedback_msg = "LF band (3.5 MHz)"
         elif opt.hamlib:
-            global rigfreq_request
             rigfreq_request = 3500.0
             touch_feedback_msg = "LF band (3.5 MHz)"
         touch_feedback_timer = 60
@@ -787,6 +779,7 @@ def draw_touch_zones(surface):
     Args:
         surface: pygame surface to draw on
     """
+    global h_2d, w_main, BLUE_GRAY
     if opt.control in ['rtl', 'si570', 'hamlib']:
         # Draw zone boundaries
         zone1_y = h_2d / 3
@@ -814,7 +807,7 @@ def handle_waterfall_touch_controls(x, y, dx, dy):
         dx: horizontal movement
         dy: vertical movement
     """
-    global v_min, v_max, touch_feedback_msg, touch_feedback_timer
+    global v_min, v_max, touch_feedback_msg, touch_feedback_timer, mywf
     
     if opt.waterfall:
         # Adjust waterfall palette with vertical movement
@@ -868,7 +861,7 @@ def handle_spectrum_touch_controls(x, y, dx, dy):
         dx: horizontal movement
         dy: vertical movement
     """
-    global sp_min, sp_max, touch_feedback_msg, touch_feedback_timer
+    global sp_min, sp_max, touch_feedback_msg, touch_feedback_timer, mygraticule, surf_2d_graticule, w_spectra
     
     # Adjust spectrum dB limits with vertical movement
     if abs(dy) > 5:
