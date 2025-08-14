@@ -1,0 +1,25 @@
+pygame 1.9.6
+Hello from the pygame community. https://www.pygame.org/contribute.html
+identification: IQ.PY v. 0.3.6 de AA6E
+source        : rtl
+freq control  : hamlib
+waterfall     : True
+rev i/q       : True
+sample rate   : 1024000
+size          : 384
+buffers       : 12
+skipping      : 0
+hamlib        : True
+hamlib rigtype: 2031
+hamlib device : /dev/ttyUSB0
+rtl frequency : 146000000.0
+rtl gain      : 0
+pulse         : 10
+fullscreen    : False
+hamlib intvl  : 1.0
+cpu load intvl: 3.0
+wf accum.     : 4
+wf palette    : 2
+sp_min, max   : -120 -20
+v_min, max    : -120 -20
+PCM290x lagfix: False
