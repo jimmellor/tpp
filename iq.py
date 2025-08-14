@@ -122,6 +122,8 @@ print("PCM290x lagfix:", opt.lagfix)
 if opt.lcd4:
     print("LCD4 brightnes:", opt.lcd4_brightness)
 print("Touchscreen   : Enabled for frequency control")
+print("touch_sensitivity:", opt.touch_sensitivity)
+print("touch_coarse_sensitivity:", opt.touch_coarse_sensitivity)
 
 def quit_all():
     """ Quit pygames and close std outputs somewhat gracefully.
@@ -152,6 +154,8 @@ def handle_touch_frequency_change(dx, dy, control_type):
         freq_change = -dy * touch_freq_step  # Negative because Y increases downward
         if abs(dy) > 20:  # Coarse adjustment for larger movements
             freq_change = -dy * touch_freq_step_coarse
+        
+        print(f"Frequency change: {freq_change:.1f} kHz, control_type: {control_type}")
             
         if control_type == 'rtl':
             # RTL frequency control
@@ -167,17 +171,22 @@ def handle_touch_frequency_change(dx, dy, control_type):
             current_freq = mysi570.getFreqByValue() * 1000  # Convert to kHz
             new_freq = current_freq + freq_change
             mysi570.setFreqByValue(new_freq / 1000.0)  # Convert back to MHz
-            touch_feedback_msg = f"Si570: {freq_change:+.1f} kHz"
+            touch_feedback_msg = f"Si570: {freq_change:.1f} kHz"
             touch_feedback_timer = 30  # Show feedback for 30 frames
             print(f"Si570 frequency changed by {freq_change:.1f} kHz to {new_freq:.3f} kHz")
             
         elif control_type == 'hamlib':
             # Hamlib frequency control
-            new_freq = rigfreq + freq_change
-            rigfreq_request = new_freq
-            touch_feedback_msg = f"Hamlib: {freq_change:+.1f} kHz"
-            touch_feedback_timer = 30  # Show feedback for 30 frames
-            print(f"Hamlib frequency changed by {freq_change:.1f} kHz to {new_freq:.3f} kHz")
+            if 'hamlib_available' in globals() and hamlib_available:
+                new_freq = rigfreq + freq_change
+                rigfreq_request = new_freq
+                touch_feedback_msg = f"Hamlib: {freq_change:+.1f} kHz"
+                touch_feedback_timer = 30  # Show feedback for 30 frames
+                print(f"Hamlib frequency changed by {freq_change:.1f} kHz to {new_freq:.3f} kHz")
+            else:
+                touch_feedback_msg = "Hamlib not available"
+                touch_feedback_timer = 30
+                print("Hamlib not available for frequency control")
 
 def handle_touch_parameter_change(dx, dy):
     """Handle touch-based parameter changes for non-frequency controls
@@ -797,9 +806,9 @@ def draw_touch_zones(surface):
         font = pg.font.SysFont('sans', 10)
         
         # Draw rotated frequency zone labels
-        draw_rotated_text(surface, "High Freq", font, BLUE_GRAY, (zone1_y/2, 20), 90)
-        draw_rotated_text(surface, "Mid Freq", font, BLUE_GRAY, (zone1_y + zone1_y/2, 20), 90)
-        draw_rotated_text(surface, "Low Freq", font, BLUE_GRAY, (zone2_y + zone1_y/2, 20), 90)
+        draw_rotated_text(surface, "High Freq", font, BLUE_GRAY, (zone1_y/2, 20), 270)
+        draw_rotated_text(surface, "Mid Freq", font, BLUE_GRAY, (zone1_y + zone1_y/2, 20), 270)
+        draw_rotated_text(surface, "Low Freq", font, BLUE_GRAY, (zone2_y + zone1_y/2, 20), 270)
         
         # Draw dB scale zones (horizontal for landscape)
         db_zone1 = w_main / 3
@@ -810,8 +819,8 @@ def draw_touch_zones(surface):
         pg.draw.line(surface, BLUE_GRAY, (db_zone2, 0), (db_zone2, h_2d), 1)
         
         # Add rotated dB zone labels
-        draw_rotated_text(surface, "Upper dB", font, BLUE_GRAY, (db_zone1/2, h_2d - 20), 90)
-        draw_rotated_text(surface, "Lower dB", font, BLUE_GRAY, (db_zone2 + db_zone2/2, h_2d - 20), 90)
+        draw_rotated_text(surface, "Upper dB", font, BLUE_GRAY, (db_zone1/2, h_2d - 20), 270)
+        draw_rotated_text(surface, "Lower dB", font, BLUE_GRAY, (db_zone2 + db_zone2/2, h_2d - 20), 270)
 
 def draw_rotated_text(surface, text, font, color, position, angle=90):
     """Draw text rotated by the specified angle
@@ -886,7 +895,7 @@ def draw_touch_feedback(surface):
         elif opt.control == 'si570':
             current_freq = mysi570.getFreqByValue()
             freq_text = f"Freq: {current_freq:.3f} MHz"
-        elif opt.hamlib:
+        elif opt.hamlib and 'hamlib_available' in globals() and hamlib_available:
             freq_text = f"Freq: {rigfreq:.1f} kHz"
         else:
             freq_text = "Freq: N/A"
@@ -895,8 +904,8 @@ def draw_touch_feedback(surface):
         db_text = f"dB: {sp_min} to {sp_max}"
         
         # Draw rotated text for landscape orientation
-        draw_rotated_text(surface, freq_text, font, (255, 255, 0), (50, 50), 90)  # Yellow
-        draw_rotated_text(surface, db_text, font, (0, 255, 255), (50, 100), 90)   # Cyan
+        draw_rotated_text(surface, freq_text, font, (255, 255, 0), (50, 50), 270)  # Yellow
+        draw_rotated_text(surface, db_text, font, (0, 255, 255), (50, 100), 270)   # Cyan
 
 def handle_waterfall_touch_controls(x, y, dx, dy):
     """Handle touch controls specific to waterfall display
@@ -1121,17 +1130,33 @@ if opt.hamlib:
             (All Hamlib I/O is done through this thread.)
         """
         global rigfreq, rigfreq_request
-        rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
-        while True:                     # forever!
-            # With KX3 @ 38.4 kbs, get_freq takes 100-150 ms to complete
-            # If a new vfo setting is desired, we will have rigfreq_request
-            # set to the new frequency, otherwise = None.
-            if rigfreq_request:         # ordering of loop speeds up freq change
-                if rigfreq_request != rigfreq:
-                    rig.set_freq(rigfreq_request*1000)
-                    rigfreq_request = None
+        try:
             rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
-            time.sleep(interval)
+            while True:                     # forever!
+                # With KX3 @ 38.4 kbs, get_freq takes 100-150 ms to complete
+                # If a new vfo setting is desired, we will have rigfreq_request
+                # set to the new frequency, otherwise = None.
+                if rigfreq_request:         # ordering of loop speeds up freq change
+                    if rigfreq_request != rigfreq:
+                        try:
+                            rig.set_freq(int(rigfreq_request*1000))
+                        except TypeError as e:
+                            print(f"Hamlib set_freq error: {e}")
+                            print(f"Trying alternative method...")
+                            try:
+                                # Try with string frequency
+                                rig.set_freq(str(int(rigfreq_request*1000)))
+                            except Exception as e2:
+                                print(f"Alternative method also failed: {e2}")
+                                print(f"rigfreq_request: {rigfreq_request}, calculated: {int(rigfreq_request*1000)}")
+                        rigfreq_request = None
+                rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
+                time.sleep(interval)
+        except Exception as e:
+            print(f"Hamlib thread error: {e}")
+            global hamlib_available
+            hamlib_available = False
+            opt.control = "none"
 
 # THREAD: CPU load checking, monitoring cpu stats.
 cpu_usage = [0., 0., 0.]
@@ -1245,23 +1270,31 @@ if opt.waterfall:
 if (opt.control == "si570") and opt.hamlib:
     print("Warning: Hamlib requested with si570.  Si570 wins! No Hamlib.")
 if opt.hamlib and (opt.control != "si570"):
-    import Hamlib
-    # start up Hamlib rig connection
-    Hamlib.rig_set_debug (Hamlib.RIG_DEBUG_NONE)
-    rig = Hamlib.Rig(opt.hamlib_rigtype)
-    rig.set_conf ("rig_pathname",opt.hamlib_device)
-    rig.set_conf ("retry","5")
-    rig.open ()
-    
-    # Create thread for Hamlib freq. checking.  
-    # Helps to even out the loop timing, maybe.
-    hl_thread = threading.Thread(target=updatefreq, 
-                        args = (opt.hamlib_interval, rig))
-    hl_thread.daemon = True
-    hl_thread.start()
-    print("Hamlib thread started.")
+    try:
+        import Hamlib
+        # start up Hamlib rig connection
+        Hamlib.rig_set_debug (Hamlib.RIG_DEBUG_NONE)
+        rig = Hamlib.Rig(opt.hamlib_rigtype)
+        rig.set_conf ("rig_pathname",opt.hamlib_device)
+        rig.set_conf ("retry","5")
+        rig.open ()
+        
+        # Create thread for Hamlib freq. checking.  
+        # Helps to even out the loop timing, maybe.
+        hl_thread = threading.Thread(target=updatefreq, 
+                            args = (opt.hamlib_interval, rig))
+        hl_thread.daemon = True
+        hl_thread.start()
+        print("Hamlib thread started.")
+        hamlib_available = True
+    except Exception as e:
+        print(f"Hamlib initialization failed: {e}")
+        print("Falling back to no frequency control")
+        opt.control = "none"
+        hamlib_available = False
 else:
     print("Hamlib not requested.")
+    hamlib_available = False
 
 # Create thread for cpu load monitor
 lm_thread = threading.Thread(target=cpu_load, args = (opt.cpu_load_interval,))
@@ -1327,8 +1360,11 @@ while True:
     surf_main.fill(BGCOLOR)     # Erase with background color
     
     # Draw touch zone indicators if frequency control is enabled
-    if opt.control in ['rtl', 'si570', 'hamlib']:
+    if opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available):
         draw_touch_zones(surf_main)
+        print(f"Drawing touch zones for control: {opt.control}")
+    else:
+        print(f"Not drawing touch zones - control is: {opt.control}")
 
     # Each time through this loop, we receive an audio chunk, containing
     # multiple buffers.  The buffers have been transformed and the log power
@@ -1340,7 +1376,7 @@ while True:
     showfreq = True
     if opt.control == "si570":
         msg = "%.3f kHz" % (mysi570.getFreqByValue() * 1000.) # freq/4 from Si570
-    elif opt.hamlib:
+    elif opt.hamlib and 'hamlib_available' in globals() and hamlib_available:
         msg = "%.3f kHz" % rigfreq   # take current rigfreq from hamlib thread
     elif opt.control=='rtl':
         msg = "%.3f MHz" % (dataIn.rtl.get_center_freq()/1.e6)
@@ -1460,7 +1496,7 @@ while True:
                 for bb in button_names:
                     button_surface = medfont.render(bb, 1, WHITE, BLACK)
                     # Rotate button text for landscape orientation
-                    button_surface = pg.transform.rotate(button_surface, 90)
+                    button_surface = pg.transform.rotate(button_surface, 270)
                     button_surfs.append(button_surface)
 
             # Help info will be placed toward top of window.
@@ -1506,7 +1542,7 @@ while True:
                 help_matter.blit(medfont.render(x, 1, TCOLOR2), (20,ix*wh[1]+15))
             
             # Rotate the help surface for landscape orientation
-            help_matter = pg.transform.rotate(help_matter, 90)
+            help_matter = pg.transform.rotate(help_matter, 270)
             
             # "Live" info is placed toward bottom of window...
             # Width of this surface is a guess. (It should be computed.)
@@ -1528,7 +1564,7 @@ while True:
             live_surface.blit(medfont.render(msg, 1, TCOLOR2), (200, 32))
             
             # Rotate the live surface for landscape orientation
-            live_surface = pg.transform.rotate(live_surface, 90)
+            live_surface = pg.transform.rotate(live_surface, 270)
         # Blit newly formatted -- or old -- screen to main surface.
         if place_buttons:   # Do we have rt hand buttons to place?
             for ix, bb in enumerate(button_surfs):
@@ -1554,13 +1590,18 @@ while True:
             touch_start_x = event.x * w_main
             touch_start_y = event.y * h_2d
             touch_start_time = time.time()
+            print(f"Touch started at ({touch_start_x:.0f}, {touch_start_y:.0f}), control={opt.control}")
             if opt.control == 'rtl':
                 touch_start_freq = dataIn.rtl.get_center_freq()
+                print(f"RTL start freq: {touch_start_freq/1e6:.3f} MHz")
             elif opt.control == 'si570':
                 touch_start_freq = mysi570.getFreqByValue() * 1000
-            elif opt.hamlib:
+                print(f"Si570 start freq: {touch_start_freq:.3f} kHz")
+            elif opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available:
                 touch_start_freq = rigfreq
-            print(f"Touch started at ({touch_start_x:.0f}, {touch_start_y:.0f})")
+                print(f"Hamlib start freq: {touch_start_freq:.3f} kHz")
+            else:
+                print(f"No frequency control available")
             
         elif event.type == pg.FINGERUP:
             # Touch ended
@@ -1642,7 +1683,7 @@ while True:
                 
         elif event.type == pg.FINGERMOTION:
             # Touch movement - adjust frequency based on movement
-            if touch_active and opt.control in ['rtl', 'si570', 'hamlib']:
+            if touch_active and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
                 current_x = event.x * w_main
                 current_y = event.y * h_2d
                 dx = current_x - touch_start_x
@@ -1650,11 +1691,14 @@ while True:
                 
                 # Only process if movement is significant
                 if abs(dx) > 5 or abs(dy) > 5:
+                    print(f"Touch motion: dx={dx:.1f}, dy={dy:.1f}, control={opt.control}")
                     # VERTICAL movement for frequency changes (landscape orientation)
                     if abs(dy) > abs(dx):
+                        print(f"Processing frequency change: dy={dy:.1f}")
                         handle_touch_frequency_change(dx, dy, opt.control)
                     # HORIZONTAL movement for dB scale adjustments (landscape orientation)
                     elif abs(dx) > abs(dy):
+                        print(f"Processing dB change: dx={dx:.1f}")
                         # Handle spectrum controls
                         handle_spectrum_touch_controls(current_x, current_y, dx, dy)
                         # Handle waterfall controls if enabled
