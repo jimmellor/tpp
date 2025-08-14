@@ -1279,7 +1279,7 @@ WF_LINES = 100                      # How many lines to use in the waterfall
 # Initialize pygame (pg)
 # We should not use pg.init(), because we don't want pg audio functions.
 pg.display.init()
-# pg.mouse.set_visible(False)
+pg.mouse.set_visible(False)
 pg.font.init()
 
 # Define the main window surface
@@ -1762,22 +1762,22 @@ while True:
                 dx = current_x - touch_start_x
                 dy = current_y - touch_start_y
                 
-                        # Only process if movement is significant
-        if abs(dx) > 5 or abs(dy) > 5:
-            # Check if touch is in the dB scale area (right side of screen)
-            if current_x > w_main * 2/3:  # Right third of screen is dB control area
-                # Handle dB scale adjustments with vertical movement
-                if abs(dy) > abs(dx):
-                    handle_db_scale_adjustment(dy)
-            # Check if touch is in the frequency control area (left side of screen) and frequency control is enabled
-            elif current_x < w_main * 1/3 and opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
-                # Handle frequency changes with vertical movement
-                if abs(dy) > abs(dx):
-                    handle_touch_frequency_change(dx, dy, opt.control)
-            
-            # Update start position for next movement
-            touch_start_x = current_x
-            touch_start_y = current_y
+                # Only process if movement is significant
+                if abs(dx) > 5 or abs(dy) > 5:
+                    # Check if touch is in the dB scale area (right side of screen)
+                    if current_x > w_main * 2/3:  # Right third of screen is dB control area
+                        # Handle dB scale adjustments with vertical movement
+                        if abs(dy) > abs(dx):
+                            handle_db_scale_adjustment(dy)
+                    # Check if touch is in the frequency control area (left side of screen) and frequency control is enabled
+                    elif current_x < w_main * 1/3 and opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
+                        # Handle frequency changes with vertical movement
+                        if abs(dy) > abs(dx):
+                            handle_touch_frequency_change(dx, dy, opt.control)
+                    
+                    # Update start position for next movement
+                    touch_start_x = current_x
+                    touch_start_y = current_y
                     
         elif event.type == pg.KEYDOWN:
             if info_phase <= 1:         # Normal op. (0) or help phase 1 (1)
