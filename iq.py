@@ -1724,7 +1724,7 @@ while True:
                             touch_feedback_timer = 60
                             print("Long press - help screen activated")
                     # Check for swipe gesture
-                    elif press_duration < 0.5 and (abs(dx) > 50 or abs(dy) > 50):
+                    elif press_duration < 0.5 and (abs(current_x - touch_start_x) > 50 or abs(current_y - touch_start_y) > 50):
                         handle_swipe_gesture(touch_start_x, touch_start_y, current_x, current_y, press_duration)
                     # Check for double tap
                     elif current_time - touch_last_tap_time < 0.5:  # Double tap within 0.5 seconds
@@ -1778,6 +1778,7 @@ while True:
                     # Update start position for next movement
                     touch_start_x = current_x
                     touch_start_y = current_y
+            # else: touch_active is False, so do nothing
                     
         elif event.type == pg.KEYDOWN:
             if info_phase <= 1:         # Normal op. (0) or help phase 1 (1)
