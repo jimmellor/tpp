@@ -102,6 +102,8 @@ op.add_option("--touch_sensitivity", action="store", type="float", dest="touch_s
     help="Touchscreen frequency change sensitivity (kHz per pixel, default 1.0)")
 op.add_option("--touch_coarse_sensitivity", action="store", type="float", dest="touch_coarse_sensitivity",
     help="Touchscreen coarse frequency change sensitivity (kHz per pixel, default 10.0)")
+op.add_option("--touch_freq_control", action="store_true", dest="touch_freq_control",
+    help="Enable touchscreen frequency control (default: disabled)")
 
 # The following are the default values which are used if not specified in the
 # command line.  You may want to edit them to be close to your normal operating needs.
@@ -137,6 +139,7 @@ op.set_defaults(
     waterfall_palette       = 2,        # choose a waterfall color scheme
     touch_sensitivity       = 1.0,      # Touchscreen fine sensitivity (kHz/pixel)
     touch_coarse_sensitivity = 10.0,    # Touchscreen coarse sensitivity (kHz/pixel)
+    touch_freq_control      = False,    # Touchscreen frequency control enabled
     )
 
 opt, args = op.parse_args()

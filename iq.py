@@ -121,9 +121,14 @@ print("v_min, max    :", opt.v_min, opt.v_max)
 print("PCM290x lagfix:", opt.lagfix)
 if opt.lcd4:
     print("LCD4 brightnes:", opt.lcd4_brightness)
-print("Touchscreen   : Enabled for frequency control")
-print("touch_sensitivity:", opt.touch_sensitivity)
-print("touch_coarse_sensitivity:", opt.touch_coarse_sensitivity)
+    print("Touchscreen   : Enabled for dB control")
+    if opt.control == "none":
+        print("Frequency control: None - use --SI570, --RTL, or --HAMLIB to enable")
+    else:
+        print("Frequency control:", opt.control)
+    print("Touch frequency control:", "Enabled" if opt.touch_freq_control else "Disabled")
+    print("touch_sensitivity:", opt.touch_sensitivity)
+    print("touch_coarse_sensitivity:", opt.touch_coarse_sensitivity)
 
 def quit_all():
     """ Quit pygames and close std outputs somewhat gracefully.
@@ -154,8 +159,6 @@ def handle_touch_frequency_change(dx, dy, control_type):
         freq_change = -dy * touch_freq_step  # Negative because Y increases downward
         if abs(dy) > 20:  # Coarse adjustment for larger movements
             freq_change = -dy * touch_freq_step_coarse
-        
-        print(f"Frequency change: {freq_change:.1f} kHz, control_type: {control_type}")
             
         if control_type == 'rtl':
             # RTL frequency control
@@ -792,7 +795,22 @@ def draw_touch_zones(surface):
         surface: pygame surface to draw on
     """
     global h_2d, w_main, BLUE_GRAY
-    if opt.control in ['rtl', 'si570', 'hamlib']:
+    
+    # Always draw dB scale zones (horizontal for landscape) - these work without frequency control
+    db_zone1 = w_main / 3
+    db_zone2 = 2 * w_main / 3
+    
+    # Draw horizontal lines for dB zones
+    pg.draw.line(surface, BLUE_GRAY, (db_zone1, 0), (db_zone1, h_2d), 1)
+    pg.draw.line(surface, BLUE_GRAY, (db_zone2, 0), (db_zone2, h_2d), 1)
+    
+    # Add rotated dB zone labels
+    font = pg.font.SysFont('sans', 10)
+    draw_rotated_text(surface, "Upper dB", font, BLUE_GRAY, (db_zone1/2, h_2d - 20), 270)
+    draw_rotated_text(surface, "Lower dB", font, BLUE_GRAY, (db_zone2 + db_zone2/2, h_2d - 20), 270)
+    
+    # Only draw frequency zones if frequency control is available AND touch freq control is enabled
+    if opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
         # Draw zone boundaries for landscape orientation
         # Frequency zones are now vertical (Y-axis)
         zone1_y = h_2d / 3
@@ -802,25 +820,16 @@ def draw_touch_zones(surface):
         pg.draw.line(surface, BLUE_GRAY, (zone1_y, 0), (zone1_y, w_main), 2)
         pg.draw.line(surface, BLUE_GRAY, (zone2_y, 0), (zone2_y, w_main), 2)
         
-        # Add zone labels rotated for landscape
-        font = pg.font.SysFont('sans', 10)
-        
         # Draw rotated frequency zone labels
         draw_rotated_text(surface, "High Freq", font, BLUE_GRAY, (zone1_y/2, 20), 270)
         draw_rotated_text(surface, "Mid Freq", font, BLUE_GRAY, (zone1_y + zone1_y/2, 20), 270)
         draw_rotated_text(surface, "Low Freq", font, BLUE_GRAY, (zone2_y + zone1_y/2, 20), 270)
-        
-        # Draw dB scale zones (horizontal for landscape)
-        db_zone1 = w_main / 3
-        db_zone2 = 2 * w_main / 3
-        
-        # Draw horizontal lines for dB zones
-        pg.draw.line(surface, BLUE_GRAY, (db_zone1, 0), (db_zone1, h_2d), 1)
-        pg.draw.line(surface, BLUE_GRAY, (db_zone2, 0), (db_zone2, h_2d), 1)
-        
-        # Add rotated dB zone labels
-        draw_rotated_text(surface, "Upper dB", font, BLUE_GRAY, (db_zone1/2, h_2d - 20), 270)
-        draw_rotated_text(surface, "Lower dB", font, BLUE_GRAY, (db_zone2 + db_zone2/2, h_2d - 20), 270)
+    elif opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available):
+        # Frequency control available but touch freq control disabled
+        draw_rotated_text(surface, "Touch Freq Disabled", font, (255, 255, 128), (h_2d/2, 20), 270)
+    else:
+        # Show message that no frequency control is available
+        draw_rotated_text(surface, "No Freq Control", font, (255, 128, 128), (h_2d/2, 20), 270)
 
 def draw_rotated_text(surface, text, font, color, position, angle=90):
     """Draw text rotated by the specified angle
@@ -883,29 +892,40 @@ def draw_touch_feedback(surface):
         
         touch_feedback_timer -= 1
     
-    # Show real-time values during touch
-    if touch_active:
-        # Create font for real-time display
-        font = pg.font.SysFont('sans', 14)
-        
-        # Get current frequency
-        if opt.control == 'rtl':
-            current_freq = dataIn.rtl.get_center_freq() / 1e6  # Convert to MHz
-            freq_text = f"Freq: {current_freq:.3f} MHz"
-        elif opt.control == 'si570':
-            current_freq = mysi570.getFreqByValue()
-            freq_text = f"Freq: {current_freq:.3f} MHz"
-        elif opt.hamlib and 'hamlib_available' in globals() and hamlib_available:
-            freq_text = f"Freq: {rigfreq:.1f} kHz"
-        else:
-            freq_text = "Freq: N/A"
-        
-        # Get current dB values
-        db_text = f"dB: {sp_min} to {sp_max}"
-        
-        # Draw rotated text for landscape orientation
-        draw_rotated_text(surface, freq_text, font, (255, 255, 0), (50, 50), 270)  # Yellow
-        draw_rotated_text(surface, db_text, font, (0, 255, 255), (50, 100), 270)   # Cyan
+            # Show real-time values during touch
+        if touch_active:
+            # Create font for real-time display
+            font = pg.font.SysFont('sans', 14)
+            
+            # Get current frequency
+            if opt.control == 'rtl':
+                current_freq = dataIn.rtl.get_center_freq() / 1e6  # Convert to MHz
+                freq_text = f"Freq: {current_freq:.3f} MHz"
+            elif opt.control == 'si570':
+                current_freq = mysi570.getFreqByValue()
+                freq_text = f"Freq: {current_freq:.3f} MHz"
+            elif opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available:
+                freq_text = f"Freq: {rigfreq:.1f} kHz"
+            else:
+                if opt.touch_freq_control:
+                    freq_text = "Touch to adjust dB"
+                else:
+                    freq_text = "Touch freq disabled"
+            
+            # Get current dB values
+            db_text = f"dB: {sp_min} to {sp_max}"
+            
+            # Draw rotated text for landscape orientation
+            draw_rotated_text(surface, freq_text, font, (255, 255, 0), (50, 50), 270)  # Yellow
+            draw_rotated_text(surface, db_text, font, (0, 255, 255), (50, 100), 270)   # Cyan
+            
+            # Add instruction for frequency control if none available
+            if opt.control == "none":
+                instruction_text = "Use --SI570, --RTL, or --HAMLIB"
+                draw_rotated_text(surface, instruction_text, font, (255, 128, 128), (50, 150), 270)  # Red
+            elif not opt.touch_freq_control:
+                instruction_text = "Use --touch_freq_control to enable"
+                draw_rotated_text(surface, instruction_text, font, (255, 255, 128), (50, 150), 270)  # Yellow
 
 def handle_waterfall_touch_controls(x, y, dx, dy):
     """Handle touch controls specific to waterfall display
@@ -1359,12 +1379,8 @@ while True:
 
     surf_main.fill(BGCOLOR)     # Erase with background color
     
-    # Draw touch zone indicators if frequency control is enabled
-    if opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available):
-        draw_touch_zones(surf_main)
-        print(f"Drawing touch zones for control: {opt.control}")
-    else:
-        print(f"Not drawing touch zones - control is: {opt.control}")
+    # Always draw touch zones for dB control, even without frequency control
+    draw_touch_zones(surf_main)
 
     # Each time through this loop, we receive an audio chunk, containing
     # multiple buffers.  The buffers have been transformed and the log power
@@ -1511,8 +1527,11 @@ while True:
                 if opt.control != "none":
                     lines.append("Change rcvr freq: (rt arrow) increase; (lt arrow) decrease")
                     lines.append("   Use SHIFT for bigger steps")
-                    lines.append("TOUCH: Drag VERTICALLY to change frequency (landscape)")
-                    lines.append("   Fine control: small movements, Coarse: large movements")
+                    if opt.touch_freq_control:
+                        lines.append("TOUCH: Drag VERTICALLY to change frequency (landscape)")
+                        lines.append("   Fine control: small movements, Coarse: large movements")
+                    else:
+                        lines.append("TOUCH: Drag VERTICALLY disabled (use --touch_freq_control)")
                     lines.append("   Drag HORIZONTALLY to adjust spectrum dB limits")
                     lines.append("   Tap zones for frequency presets")
                     lines.append("   Double-tap to reset display")
@@ -1590,18 +1609,12 @@ while True:
             touch_start_x = event.x * w_main
             touch_start_y = event.y * h_2d
             touch_start_time = time.time()
-            print(f"Touch started at ({touch_start_x:.0f}, {touch_start_y:.0f}), control={opt.control}")
             if opt.control == 'rtl':
                 touch_start_freq = dataIn.rtl.get_center_freq()
-                print(f"RTL start freq: {touch_start_freq/1e6:.3f} MHz")
             elif opt.control == 'si570':
                 touch_start_freq = mysi570.getFreqByValue() * 1000
-                print(f"Si570 start freq: {touch_start_freq:.3f} kHz")
             elif opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available:
                 touch_start_freq = rigfreq
-                print(f"Hamlib start freq: {touch_start_freq:.3f} kHz")
-            else:
-                print(f"No frequency control available")
             
         elif event.type == pg.FINGERUP:
             # Touch ended
@@ -1682,8 +1695,8 @@ while True:
                 print("Touch ended")
                 
         elif event.type == pg.FINGERMOTION:
-            # Touch movement - adjust frequency based on movement
-            if touch_active and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
+            # Touch movement - always handle dB adjustments, frequency if control available
+            if touch_active:
                 current_x = event.x * w_main
                 current_y = event.y * h_2d
                 dx = current_x - touch_start_x
@@ -1691,19 +1704,17 @@ while True:
                 
                 # Only process if movement is significant
                 if abs(dx) > 5 or abs(dy) > 5:
-                    print(f"Touch motion: dx={dx:.1f}, dy={dy:.1f}, control={opt.control}")
-                    # VERTICAL movement for frequency changes (landscape orientation)
-                    if abs(dy) > abs(dx):
-                        print(f"Processing frequency change: dy={dy:.1f}")
-                        handle_touch_frequency_change(dx, dy, opt.control)
                     # HORIZONTAL movement for dB scale adjustments (landscape orientation)
-                    elif abs(dx) > abs(dy):
-                        print(f"Processing dB change: dx={dx:.1f}")
+                    if abs(dx) > abs(dy):
                         # Handle spectrum controls
                         handle_spectrum_touch_controls(current_x, current_y, dx, dy)
                         # Handle waterfall controls if enabled
                         if opt.waterfall:
                             handle_waterfall_touch_controls(current_x, current_y, dx, dy)
+                    
+                                                    # VERTICAL movement for frequency changes (landscape orientation) - only if control available AND touch freq control enabled
+                    elif abs(dy) > abs(dx) and opt.touch_freq_control and (opt.control in ['rtl', 'si570'] or (opt.control == 'hamlib' and 'hamlib_available' in globals() and hamlib_available)):
+                        handle_touch_frequency_change(dx, dy, opt.control)
                     
                     # Update start position for next movement
                     touch_start_x = current_x
