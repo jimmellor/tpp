@@ -98,6 +98,10 @@ print("hamlib intvl  :", opt.hamlib_interval)
 print("cpu load intvl:", opt.cpu_load_interval)
 print("wf accum.     :", opt.waterfall_accumulation)
 print("wf palette    :", opt.waterfall_palette)
+print("audio output  :", opt.audio_output)
+if opt.audio_output:
+    print("demod type    :", opt.demod_type)
+    print("output device :", opt.output_index)
 print("sp_min, max   :", opt.sp_min, opt.sp_max)
 print("v_min, max    :", opt.v_min, opt.v_max)
 #print "max queue dept:", opt.max_queue
@@ -404,7 +408,11 @@ if opt.source=="rtl":             # input from RTL dongle (and freq control)
 #     mainqueueLock = af.queueLock    # queue and lock only for soundcard
 #     dataIn = af.DataInput(opt)
 elif opt.source=='audio':         # input from audio card
-    dataIn = [0,0]                  # dummy data
+    import iq_af as af
+    mainqueueLock = af.queueLock    # queue and lock only for soundcard
+    dataIn = af.DataInput(opt)
+    # Start the audio streams
+    dataIn.Start()
 else:
     print("unrecognized mode")
     quit_all()
@@ -477,6 +485,12 @@ while True:
         ww, hh = medfont.size(msg)
         surf_main.blit(medfont.render(msg, 1, BLACK, BGCOLOR), (25, y_2d-hh))
         surf_main.blit(sled, (10, y_2d-hh))
+        
+        # Show audio output status
+        if opt.audio_output:
+            audio_status = f"Audio Out: {opt.demod_type.upper()}"
+            ww, hh = medfont.size(audio_status)
+            surf_main.blit(medfont.render(audio_status, 1, GREEN, BGCOLOR), (25, y_2d-hh-20))
 
     if opt.source=='rtl':               # Input from RTL-SDR dongle
         iq_data_cmplx = dataIn.ReadSamples(chunk_size)
@@ -484,6 +498,22 @@ while True:
             iq_data_cmplx = np.imag(iq_data_cmplx)+1j*np.real(iq_data_cmplx)
         #time.sleep(0.05)                # slow down if fast PC
         stats = [ 0, 0]                 # for now...
+        
+        # Audio output processing for RTL
+        if opt.audio_output and hasattr(dataIn, 'play_demodulated_audio'):
+            # Convert complex data to I/Q format for demodulation
+            i_data = np.real(iq_data_cmplx)
+            q_data = np.imag(iq_data_cmplx)
+            iq_for_demod = np.column_stack((i_data, q_data))
+            
+            # Play the demodulated audio
+            dataIn.play_demodulated_audio(iq_for_demod, opt.demod_type)
+            
+        # Show audio output status for RTL
+        if opt.audio_output:
+            audio_status = f"Audio Out: {opt.demod_type.upper()}"
+            ww, hh = medfont.size(audio_status)
+            surf_main.blit(medfont.render(audio_status, 1, GREEN, BGCOLOR), (25, y_2d-hh-20))
     else:                               # Input from audio card
         # In its separate thread, a chunk of audio data has accumulated.
         # When ready, pull log power spectrum data out of queue.
@@ -503,6 +533,21 @@ while True:
             iq_data_cmplx = np.array(im_d + re_d*1j)
         else:               # normal spectrum
             iq_data_cmplx = np.array(re_d + im_d*1j)
+
+    # Audio output processing - play demodulated audio if enabled
+    if opt.audio_output and opt.source=='audio' and hasattr(dataIn, 'play_demodulated_audio'):
+        # Convert complex data back to I/Q format for demodulation
+        if opt.source=='rtl':
+            # For RTL, we have complex data, convert to I/Q format
+            i_data = np.real(iq_data_cmplx)
+            q_data = np.imag(iq_data_cmplx)
+            iq_for_demod = np.column_stack((i_data, q_data))
+        else:
+            # For audio input, we already have I/Q data
+            iq_for_demod = np.column_stack((np.real(iq_data_cmplx), np.imag(iq_data_cmplx)))
+        
+        # Play the demodulated audio
+        dataIn.play_demodulated_audio(iq_for_demod, opt.demod_type)
 
     sp_log = myDSP.GetLogPowerSpectrum(iq_data_cmplx)
     if opt.source=='rtl':   # Boost rtl spectrum (arbitrary amount)
@@ -561,6 +606,9 @@ while True:
                 if opt.control != "none":
                     lines.append("Change rcvr freq: (rt arrow) increase; (lt arrow) decrease")
                     lines.append("   Use SHIFT for bigger steps")
+                if opt.audio_output:
+                    lines.append(f"Audio Output: {opt.demod_type.upper()} demodulation enabled")
+                    lines.append("   Audio is playing through speakers/headphones")
                 lines.append("RETURN - Cycle to next Help screen")
             elif info_phase == 2:
                 lines = [ "SPECTRUM ADJUSTMENTS:",

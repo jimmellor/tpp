@@ -99,6 +99,14 @@ op.add_option("--waterfall_acc", action="store", type="int", dest="waterfall_acc
 op.add_option("--waterfall_palette", action="store", type="int", dest="waterfall_palette",
     help="Waterfall color palette (1 or 2)")
 
+# Audio output options
+op.add_option("--audio_out", action="store_true", dest="audio_output",
+    help="Enable audio output (play demodulated audio through speakers)")
+op.add_option("--output_index", action="store", type="int", dest="output_index",
+    help="index of audio output device. Use pa.py to examine choices. Index -1 selects default output device.")
+op.add_option("--demod", action="store", type="string", dest="demod_type",
+    help="Demodulation type: 'am' (Amplitude Modulation) or 'fm' (Frequency Modulation). Default: 'am'")
+
 # The following are the default values which are used if not specified in the
 # command line.  You may want to edit them to be close to your normal operating needs.
 DEF_SAMPLE_RATE = 48000
@@ -130,7 +138,10 @@ op.set_defaults(
     v_max                   =-20,       # palette ends at this level
     waterfall               = True,    # Using waterfall? T/F
     waterfall_accumulation  = 4,        # No. of spectra per waterfall line
-    waterfall_palette       = 2         # choose a waterfall color scheme
+    waterfall_palette       = 2,        # choose a waterfall color scheme
+    audio_output            = False,    # Enable audio output
+    output_index            = -1,       # index of audio output device (-1 use default)
+    demod_type              = "am"      # Demodulation type: 'am' or 'fm'
     )
 
 opt, args = op.parse_args()

@@ -1,0 +1,20 @@
+# Requirements for Tiny Python Panadapter with Audio Output
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+numpy>=1.19.0
+pygame>=1.9.0
+pyaudio>=0.2.11
+
+# Optional dependencies for enhanced features
+scipy>=1.5.0  # For advanced filtering (optional but recommended)
+
+# For RTL-SDR support (if using RTL dongles)
+pyrtlsdr>=0.2.93
+
+# For Hamlib support (if using rig control)
+# Note: Hamlib Python bindings may need to be installed separately
+# or built from source depending on your system
+
+# For Si570 control (if using SoftRock-style radios)
+# libusb1>=1.2.0  # May need system-level installation
