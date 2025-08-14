@@ -1465,29 +1465,29 @@ while True:
                                     # Check for long press (help screen)
                     if press_duration > touch_long_press_threshold:
                         # Long press in different zones for different actions
-                        if y < h_2d / 3:  # Top third - menu navigation
+                        if current_y < h_2d / 3:  # Top third - menu navigation
                             handle_touch_menu_navigation(current_x, current_y)
-                        elif y > 2 * h_2d / 3:  # Bottom third - quick settings
+                        elif current_y > 2 * h_2d / 3:  # Bottom third - quick settings
                             handle_touch_quick_settings(current_x, current_y)
-                        elif y < h_2d / 3:  # Top third - display mode switch
+                        elif current_y < h_2d / 3:  # Top third - display mode switch
                             handle_touch_display_mode_switch(current_x, current_y)
-                        elif y < h_2d / 2:  # Upper middle - gain adjustment
+                        elif current_y < h_2d / 2:  # Upper middle - gain adjustment
                             handle_touch_gain_adjustment(current_x, current_y)
-                        elif y < 3 * h_2d / 4:  # Lower middle - sample rate adjustment
+                        elif current_y < 3 * h_2d / 4:  # Lower middle - sample rate adjustment
                             handle_touch_sample_rate_adjustment(current_x, current_y)
-                        elif y < 7 * h_2d / 8:  # Lower quarter - FFT size adjustment
+                        elif current_y < 7 * h_2d / 8:  # Lower quarter - FFT size adjustment
                             handle_touch_fft_size_adjustment(current_x, current_y)
-                        elif y < 15 * h_2d / 16:  # Lower eighth - buffer adjustment
+                        elif current_y < 15 * h_2d / 16:  # Lower eighth - buffer adjustment
                             handle_touch_buffer_adjustment(current_x, current_y)
-                        elif y < 31 * h_2d / 32:  # Lower sixteenth - waterfall palette adjustment
+                        elif current_y < 31 * h_2d / 32:  # Lower sixteenth - waterfall palette adjustment
                             handle_touch_waterfall_palette_adjustment(current_x, current_y)
-                        elif y < 63 * h_2d / 64:  # Lower thirty-second - waterfall accumulation adjustment
+                        elif current_y < 63 * h_2d / 64:  # Lower thirty-second - waterfall accumulation adjustment
                             handle_touch_waterfall_accumulation_adjustment(current_x, current_y)
-                        elif y < 127 * h_2d / 128:  # Lower sixty-fourth - pulse clip adjustment
+                        elif current_y < 127 * h_2d / 128:  # Lower sixty-fourth - pulse clip adjustment
                             handle_touch_pulse_clip_adjustment(current_x, current_y)
-                        elif y < 255 * h_2d / 256:  # Lower one-hundred-twenty-eighth - skip adjustment
+                        elif current_y < 255 * h_2d / 256:  # Lower one-hundred-twenty-eighth - skip adjustment
                             handle_touch_skip_adjustment(current_x, current_y)
-                        elif y < 511 * h_2d / 512:  # Lower two-hundred-fifty-sixth - lagfix adjustment
+                        elif current_y < 511 * h_2d / 512:  # Lower two-hundred-fifty-sixth - lagfix adjustment
                             handle_touch_lagfix_adjustment(current_x, current_y)
                         else:  # Bottom five-hundred-twelfth - help screen
                             info_phase = 1
@@ -1515,9 +1515,9 @@ while True:
                     else:
                         touch_tap_count = 1
                         # Check if tap is in frequency step adjustment zone
-                        if y < h_2d / 6:  # Top sixth - frequency step adjustment
+                        if current_y < h_2d / 6:  # Top sixth - frequency step adjustment
                             handle_touch_frequency_step_adjustment(current_x, current_y)
-                        elif y < h_2d / 4:  # Top quarter - frequency band switch
+                        elif current_y < h_2d / 4:  # Top quarter - frequency band switch
                             handle_touch_frequency_band_switch(current_x, current_y)
                         else:  # Regular tap handling
                             handle_touch_tap(current_x, current_y)
