@@ -98,6 +98,10 @@ op.add_option("--waterfall_acc", action="store", type="int", dest="waterfall_acc
     help="No. of spectra per waterfall line")
 op.add_option("--waterfall_palette", action="store", type="int", dest="waterfall_palette",
     help="Waterfall color palette (1 or 2)")
+op.add_option("--touch_sensitivity", action="store", type="float", dest="touch_sensitivity",
+    help="Touchscreen frequency change sensitivity (kHz per pixel, default 1.0)")
+op.add_option("--touch_coarse_sensitivity", action="store", type="float", dest="touch_coarse_sensitivity",
+    help="Touchscreen coarse frequency change sensitivity (kHz per pixel, default 10.0)")
 
 # The following are the default values which are used if not specified in the
 # command line.  You may want to edit them to be close to your normal operating needs.
@@ -130,7 +134,9 @@ op.set_defaults(
     v_max                   =-20,       # palette ends at this level
     waterfall               = True,    # Using waterfall? T/F
     waterfall_accumulation  = 4,        # No. of spectra per waterfall line
-    waterfall_palette       = 2         # choose a waterfall color scheme
+    waterfall_palette       = 2,        # choose a waterfall color scheme
+    touch_sensitivity       = 1.0,      # Touchscreen fine sensitivity (kHz/pixel)
+    touch_coarse_sensitivity = 10.0,    # Touchscreen coarse sensitivity (kHz/pixel)
     )
 
 opt, args = op.parse_args()
