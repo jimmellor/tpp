@@ -228,7 +228,7 @@ if opt.hamlib:
             (All Hamlib I/O is done through this thread.)
         """
         global rigfreq, rigfreq_request
-        rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
+        rigfreq = float(rig.get_freq(Hamlib.RIG_VFO_CURR)) * 0.001     # freq in kHz
         while True:                     # forever!
             # With KX3 @ 38.4 kbs, get_freq takes 100-150 ms to complete
             # If a new vfo setting is desired, we will have rigfreq_request
@@ -237,7 +237,7 @@ if opt.hamlib:
                 if rigfreq_request != rigfreq:
                     rig.set_freq(Hamlib.RIG_VFO_CURR, rigfreq_request*1000.)
                     rigfreq_request = None
-            rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
+            rigfreq = float(rig.get_freq(Hamlib.RIG_VFO_CURR)) * 0.001     # freq in kHz
             time.sleep(interval)
 
 # THREAD: CPU load checking, monitoring cpu stats.
