@@ -453,7 +453,7 @@ while True:
     if showfreq:
         # Center it and blit just above 2d display
         ww, hh = lgfont.size(msg)
-        surf_main.blit(lgfont.render(msg, 1, BLACK, BGCOLOR), (0, 0))
+        surf_main.blit(lgfont.render(msg, 1, WHITE, WHITE), (0, 0))
                             #(w_middle + x_spectra - ww/2, y_2d-hh))
 
     # show overflow & underrun indicators (for audio, not rtl)
