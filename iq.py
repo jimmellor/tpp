@@ -522,14 +522,14 @@ while True:
     pg.draw.lines(surf_2d, WHITE, False, list(zip(xlist,ylist)), 1)
 
     # Place 2d spectrum on main surface
-    surf_main.blit(pg.transform.rotate(surf_2d,-90), (134, 0))
+    #surf_main.blit(pg.transform.rotate(surf_2d,-90), (134, 0))
 
     if opt.waterfall:
         # Calculate the new Waterfall line and blit it to main surface
         nsum = opt.waterfall_accumulation    # 2d spectra per wf line
         mywf.calculate(sp_log, nsum, surf_wf)
         #surf_main.blit(surf_wf, (x_spectra, y_wf+1))
-        surf_main.blit(pg.transform.rotate(surf_wf,-90), (0, 0))
+        #surf_main.blit(pg.transform.rotate(surf_wf,-90), (0, 0))
 
     if info_phase > 0:
         # Assemble and show semi-transparent overlay info screen
