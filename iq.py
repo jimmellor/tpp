@@ -235,7 +235,7 @@ if opt.hamlib:
             # set to the new frequency, otherwise = None.
             if rigfreq_request:         # ordering of loop speeds up freq change
                 if rigfreq_request != rigfreq:
-                    rig.set_freq(rigfreq_request*1000.)
+                    rig.set_freq(Hamlib.RIG_VFO_CURR, rigfreq_request*1000.)
                     rigfreq_request = None
             rigfreq = float(rig.get_freq()) * 0.001     # freq in kHz
             time.sleep(interval)
