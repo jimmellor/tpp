@@ -522,14 +522,24 @@ while True:
     pg.draw.lines(surf_2d, WHITE, False, list(zip(xlist,ylist)), 1)
 
     # Place 2d spectrum on main surface
-    #surf_main.blit(pg.transform.rotate(surf_2d,-90), (134, 0))
+    surf_main.blit(pg.transform.rotate(surf_2d,-90), (134, 0))
 
     if opt.waterfall:
         # Calculate the new Waterfall line and blit it to main surface
         nsum = opt.waterfall_accumulation    # 2d spectra per wf line
         mywf.calculate(sp_log, nsum, surf_wf)
+        
+        # Redraw touch line if it exists (since waterfall calculation clears the surface)
+        if hasattr(surf_wf, 'touch_line_pos'):
+            wf_x, wf_y = surf_wf.touch_line_pos
+            line_width = 3
+            # Draw 3-pixel wide vertical line
+            for i in range(-line_width//2, line_width//2 + 1):
+                if 0 <= wf_x + i < w_spectra:
+                    pg.draw.line(surf_wf, WHITE, (wf_x + i, 0), (wf_x + i, h_wf), 1)
+        
         #surf_main.blit(surf_wf, (x_spectra, y_wf+1))
-        #surf_main.blit(pg.transform.rotate(surf_wf,-90), (0, 0))
+        surf_main.blit(pg.transform.rotate(surf_wf,-90), (0, 0))
 
     if info_phase > 0:
         # Assemble and show semi-transparent overlay info screen
@@ -757,6 +767,42 @@ while True:
                     info_phase = 0                  # Turn OFF overlay
                     info_counter = 0
 
+    # Handle touch input for waterfall
+    for event in pg.event.get():
+        if event.type == pg.FINGERDOWN or event.type == pg.FINGERMOTION:
+            if event.type == pg.FINGERDOWN:
+                # Clear previous touch line when finger first touches
+                if hasattr(surf_wf, 'touch_line_pos'):
+                    delattr(surf_wf, 'touch_line_pos')
+            
+            # Convert touch coordinates to waterfall coordinates
+            # Touch coordinates are normalized (0.0 to 1.0), convert to screen pixels
+            touch_x = int(event.x * w_main)
+            touch_y = int(event.y * SCREEN_SIZE[1])
+            
+            # Check if touch is in waterfall area (rotated 90 degrees)
+            # Since waterfall is rotated -90 degrees, x becomes y and y becomes x
+            wf_x = touch_y  # Touch Y becomes waterfall X
+            wf_y = w_main - touch_x  # Touch X becomes waterfall Y (flipped)
+            
+            # Ensure coordinates are within waterfall bounds
+            if 0 <= wf_x < w_spectra and 0 <= wf_y < h_wf:
+                # Store touch position for drawing
+                surf_wf.touch_line_pos = (wf_x, wf_y)
+                
+                # Draw vertical white line on waterfall surface
+                line_x = wf_x
+                line_width = 3
+                # Draw 3-pixel wide vertical line
+                for i in range(-line_width//2, line_width//2 + 1):
+                    if 0 <= line_x + i < w_spectra:
+                        pg.draw.line(surf_wf, WHITE, (line_x + i, 0), (line_x + i, h_wf), 1)
+        
+        elif event.type == pg.FINGERUP:
+            # Clear touch line when finger is lifted
+            if hasattr(surf_wf, 'touch_line_pos'):
+                delattr(surf_wf, 'touch_line_pos')
+    
     # Finally, update display for user
     pg.display.update()
 
