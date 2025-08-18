@@ -286,6 +286,12 @@ pg.display.init()
 pg.mouse.set_visible(False)
 pg.font.init()
 
+# Enable touch events if available
+if hasattr(pg, 'FINGERDOWN'):
+    print("Touch events are available")
+else:
+    print("Touch events not available, using mouse events instead")
+
 # Define the main window surface
 surf_main = pg.display.set_mode([400,1280], SCREEN_MODE)
 w_main = 1280
@@ -769,24 +775,37 @@ while True:
 
     # Handle touch input for waterfall
     for event in pg.event.get():
-        if event.type == pg.FINGERDOWN or event.type == pg.FINGERMOTION:
-            if event.type == pg.FINGERDOWN:
+        # Try multiple touch event types for compatibility
+        if event.type in [pg.FINGERDOWN, pg.FINGERMOTION, pg.MOUSEBUTTONDOWN, pg.MOUSEMOTION]:
+            print(f"Touch/Mouse event: {event.type}, x={event.x:.3f}, y={event.y:.3f}")
+            
+            # Handle different event types
+            if event.type in [pg.FINGERDOWN, pg.MOUSEBUTTONDOWN]:
                 # Clear previous touch line when finger first touches
                 if hasattr(surf_wf, 'touch_line_pos'):
                     delattr(surf_wf, 'touch_line_pos')
             
-            # Convert touch coordinates to waterfall coordinates
-            # Touch coordinates are normalized (0.0 to 1.0), convert to screen pixels
-            touch_x = int(event.x * w_main)
-            touch_y = int(event.y * SCREEN_SIZE[1])
+            # Get coordinates based on event type
+            if event.type in [pg.FINGERDOWN, pg.FINGERMOTION]:
+                # Touch events have normalized coordinates (0.0 to 1.0)
+                touch_x = int(event.x * w_main)
+                touch_y = int(event.y * SCREEN_SIZE[1])
+            else:
+                # Mouse events have absolute coordinates
+                touch_x = event.x
+                touch_y = event.y
+            
+            print(f"Screen coords: touch_x={touch_x}, touch_y={touch_y}")
             
             # Check if touch is in waterfall area (rotated 90 degrees)
             # Since waterfall is rotated -90 degrees, x becomes y and y becomes x
             wf_x = touch_y  # Touch Y becomes waterfall X
             wf_y = w_main - touch_x  # Touch X becomes waterfall Y (flipped)
+            print(f"Waterfall coords: wf_x={wf_x}, wf_y={wf_y}")
             
             # Ensure coordinates are within waterfall bounds
             if 0 <= wf_x < w_spectra and 0 <= wf_y < h_wf:
+                print(f"Drawing line at waterfall position ({wf_x}, {wf_y})")
                 # Store touch position for drawing
                 surf_wf.touch_line_pos = (wf_x, wf_y)
                 
@@ -797,8 +816,11 @@ while True:
                 for i in range(-line_width//2, line_width//2 + 1):
                     if 0 <= line_x + i < w_spectra:
                         pg.draw.line(surf_wf, WHITE, (line_x + i, 0), (line_x + i, h_wf), 1)
+            else:
+                print(f"Touch outside waterfall bounds: wf_x={wf_x}, wf_y={wf_y}, bounds=({w_spectra}, {h_wf})")
         
-        elif event.type == pg.FINGERUP:
+        elif event.type in [pg.FINGERUP, pg.MOUSEBUTTONUP]:
+            print("Touch/Mouse up - clearing touch line")
             # Clear touch line when finger is lifted
             if hasattr(surf_wf, 'touch_line_pos'):
                 delattr(surf_wf, 'touch_line_pos')
