@@ -289,6 +289,9 @@ pg.font.init()
 # Enable touch events if available
 if hasattr(pg, 'FINGERDOWN'):
     print("Touch events are available")
+    # Test touch event creation
+    test_event = pg.event.Event(pg.FINGERDOWN, x=0.5, y=0.5)
+    print(f"Test touch event created: {test_event}")
 else:
     print("Touch events not available, using mouse events instead")
 
@@ -772,11 +775,9 @@ while True:
                 elif event.key == pg.K_RETURN:
                     info_phase = 0                  # Turn OFF overlay
                     info_counter = 0
-
-    # Handle touch input for waterfall
-    for event in pg.event.get():
-        # Try multiple touch event types for compatibility
-        if event.type in [pg.FINGERDOWN, pg.FINGERMOTION, pg.MOUSEBUTTONDOWN, pg.MOUSEMOTION]:
+        
+        # Handle touch input for waterfall
+        elif event.type in [pg.FINGERDOWN, pg.FINGERMOTION, pg.MOUSEBUTTONDOWN, pg.MOUSEMOTION]:
             print(f"Touch/Mouse event: {event.type}, x={event.x:.3f}, y={event.y:.3f}")
             
             # Handle different event types
